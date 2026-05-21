@@ -622,7 +622,7 @@
     <div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:4px">
       <span style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--muted)"><span style="display:inline-block;width:14px;height:14px;border-radius:3px;background:rgba(163,45,45,.18);border:1.5px solid rgba(163,45,45,.5)"></span>Zona de Colapso (ΔP &lt; 0 — underbalance)</span>
       <span style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--muted)"><span style="display:inline-block;width:14px;height:14px;border-radius:3px;background:rgba(15,110,86,.15);border:1.5px solid rgba(15,110,86,.5)"></span>Janela Operacional (0 … +OB alvo)</span>
-      <span style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--muted)"><span style="display:inline-block;width:14px;height:14px;border-radius:3px;background:rgba(45,106,79,.18);border:1.5px solid rgba(45,106,79,.5)"></span>Zona de Sobrepressão (ΔP &gt; OB alvo)</span>
+      <span style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--muted)"><span style="display:inline-block;width:14px;height:14px;border-radius:3px;background:rgba(200,149,42,.18);border:1.5px solid rgba(200,149,42,.6)"></span>Zona de Sobrepressão (ΔP &gt; OB alvo)</span>
     </div>
     <p style="font-size:10px;color:var(--hint);margin-top:6px">Eixo Y = ΔP em PSI (Ph aplicada − Pr zona crítica). Eixo X = leitura por intervalo com o ΔP daquela hora. <strong>Janela operacional</strong> = 50% do OB alvo até o OB alvo (ex.: 75–150 psi para alvo 150 psi). Abaixo do mínimo: risco de influxo. Acima: risco de perda de circulação/dano à formação.</p>
   </div>
@@ -2863,8 +2863,8 @@ function uch(){
       var y0  = yS.getPixelForValue(joOBmin);
       var yTgt= yS.getPixelForValue(joOBtarget);
       c.save();
-      // Sobrepressão (acima da janela)
-      c.fillStyle='rgba(45,106,79,.11)';
+      // Sobrepressão (acima da janela) — âmbar
+      c.fillStyle='rgba(200,149,42,.13)';
       c.fillRect(xL, yA, xR-xL, Math.max(0, yTgt-yA));
       // Janela operacional (verde)
       c.fillStyle='rgba(15,110,86,.10)';
@@ -2949,7 +2949,7 @@ function uch(){
   });
   mk_legend('leg_jo',[
     {color:'rgba(15,110,86,.9)',label:'Dentro da Janela'},
-    {color:'rgba(45,106,79,.9)',label:'Sobrepressão'},
+    {color:'rgba(200,149,42,.9)',label:'Sobrepressão'},
     {color:'rgba(163,45,45,.9)',label:'Colapso (underbalance)'}
   ]);
 
