@@ -354,11 +354,22 @@
         <p class="hint" style="color:var(--amber)">⚡ Topo do fluido — sincroniza com Seção 4</p>
       </div>
       <div class="fl">
-        <label>Overbalance Alvo para Teste (psi)</label>
+        <label>OB Sobrepressão — H1 (psi) <span class="tip-wrap" tabindex="0">ℹ<span class="tip-box">Overbalance de entrada no poço. É o ΔP máximo que você quer atingir no H1. Ex: 150 psi. O simulador calcula os barris para chegar aqui.</span></span></label>
         <input type="number" id="c_ot" value="" step="25" oninput="uci()"
-               style="border-color:var(--amber);border-width:1.5px">
-        <p class="hint">ΔP acima da pressão do reservatório</p>
+               style="border-color:#C8952A;border-width:1.5px">
+        <p class="hint" style="color:#C8952A">⚡ Limite superior — acima = Sobrepressão</p>
       </div>
+      <div class="fl">
+        <label>OB Mínimo — Colapso (psi) <span class="tip-wrap" tabindex="0">ℹ<span class="tip-box">Overbalance mínimo operacional. Abaixo deste valor = Zona de Colapso (underbalance) — risco de influxo. Ex: 50 psi. A Janela Operacional fica entre este valor e o OB Sobrepressão.</span></span></label>
+        <input type="number" id="c_obmin" value="" step="10" oninput="uci()"
+               style="border-color:#C62828;border-width:1.5px">
+        <p class="hint" style="color:#C62828">⚡ Limite inferior — abaixo = Colapso</p>
+      </div>
+    </div>
+
+    <!-- Faixa de informação Janela Operacional dinâmica -->
+    <div style="background:var(--card2);border-left:3px solid var(--amber);border-radius:0 8px 8px 0;padding:9px 14px;margin-bottom:10px;font-size:11px;color:var(--muted)">
+      <strong style="color:var(--amber-text)">Janela Operacional:</strong> valor exato = <strong>média dos ΔP das últimas 3 leituras reais</strong>. O limite inferior (colapso) é o <strong>OB Mínimo</strong> definido acima. Antes das leituras, usa o OB Mínimo como referência.
     </div>
 
     <!-- ZONAS DE FORMAÇÃO (dentro do card Dados do Poço) -->
@@ -459,6 +470,15 @@
 
   <!-- BANNER H0→H1: Volume inicial a injetar -->
   <div id="h1_banner" style="display:none"></div>
+
+  <!-- Fase de avaliação obrigatória: H2, H3, H4 a 30 min -->
+  <div id="phase_tracker" style="display:none;gap:8px;align-items:center;background:var(--card2);border-radius:8px;padding:10px 14px;margin-bottom:14px;flex-wrap:wrap">
+    <div style="font-size:11px;color:var(--muted);white-space:nowrap;font-weight:600">📋 Fase avaliação (30 min obrigatório):</div>
+    <div id="phase_h2" style="width:38px;height:38px;border-radius:8px;background:var(--card);border:1.5px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:var(--muted)">H2</div>
+    <div id="phase_h3" style="width:38px;height:38px;border-radius:8px;background:var(--card);border:1.5px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:var(--muted)">H3</div>
+    <div id="phase_h4" style="width:38px;height:38px;border-radius:8px;background:var(--card);border:1.5px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:var(--muted)">H4</div>
+    <div id="phase_msg" style="font-size:10px;color:var(--hint);margin-left:4px"></div>
+  </div>
 
   <div class="card">
     <p class="sec" id="hlbl">Registrar Leitura Atual — T+0h00</p>
@@ -618,13 +638,13 @@
   <div class="card card-highlight">
     <p class="sec"><span class="sec-num">✦</span>Janela Operacional — Nível Sonolog × Tempo</p>
     <div id="leg_jo" class="legend-row"></div>
-    <div style="position:relative;width:100%;height:360px;margin-bottom:4px"><canvas id="ch_jo"></canvas></div>
+    <div style="position:relative;width:100%;height:440px;margin-bottom:4px"><canvas id="ch_jo"></canvas></div>
     <div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:4px">
-      <span style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--muted)"><span style="display:inline-block;width:14px;height:14px;border-radius:3px;background:rgba(163,45,45,.18);border:1.5px solid rgba(163,45,45,.5)"></span>Zona de Colapso (ΔP &lt; 0 — underbalance)</span>
-      <span style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--muted)"><span style="display:inline-block;width:14px;height:14px;border-radius:3px;background:rgba(15,110,86,.15);border:1.5px solid rgba(15,110,86,.5)"></span>Janela Operacional (0 … +OB alvo)</span>
-      <span style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--muted)"><span style="display:inline-block;width:14px;height:14px;border-radius:3px;background:rgba(200,149,42,.18);border:1.5px solid rgba(200,149,42,.6)"></span>Zona de Sobrepressão (ΔP &gt; OB alvo)</span>
+      <span style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--muted)"><span style="display:inline-block;width:14px;height:14px;border-radius:3px;background:rgba(163,45,45,.18);border:1.5px solid rgba(163,45,45,.5)"></span>Zona de Colapso (ΔP &lt; OB Mínimo)</span>
+      <span style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--muted)"><span style="display:inline-block;width:14px;height:14px;border-radius:3px;background:rgba(15,110,86,.15);border:1.5px solid rgba(15,110,86,.5)"></span>Janela Operacional (OB Mín … OB H1)</span>
+      <span style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--muted)"><span style="display:inline-block;width:14px;height:14px;border-radius:3px;background:rgba(200,149,42,.18);border:1.5px solid rgba(200,149,42,.6)"></span>Zona de Sobrepressão (ΔP &gt; OB H1)</span>
     </div>
-    <p style="font-size:10px;color:var(--hint);margin-top:6px">Eixo Y = ΔP em PSI (Ph aplicada − Pr zona crítica). Eixo X = leitura por intervalo com o ΔP daquela hora. <strong>Janela operacional</strong> = 50% do OB alvo até o OB alvo (ex.: 75–150 psi para alvo 150 psi). Abaixo do mínimo: risco de influxo. Acima: risco de perda de circulação/dano à formação.</p>
+    <p style="font-size:10px;color:var(--hint);margin-top:6px">Eixo Y = ΔP em PSI (Ph aplicada − Pr zona crítica). Eixo X = leitura por intervalo. <strong>Linha verde sólida</strong> = teto da Janela Operacional (média das 3 últimas leituras = máximo). <strong>Linha âmbar pontilhada</strong> = H1 OB Sobrepressão (só referência, ponto de partida). <strong>Linha vermelha</strong> = OB Mínimo (piso da Janela — abaixo = colapso).</p>
   </div>
   <div class="card">
     <p class="sec">Nível de Fluido (Sonolog)</p>
@@ -1893,6 +1913,41 @@ function renderTestResults(){
       +'</div>';
   });
 
+  // ── Card dedicado: Volume para atingir OB Sobrepressão partindo do NE ──
+  // Sempre calculado independentemente do estado atual (não zera quando já em OB)
+  var obH1 = parseFloat(document.getElementById('c_ot').value)||0;
+  var metersH1 = grad_m>0 ? obH1/grad_m : 0;
+  var neH1 = Math.max(0, neM - metersH1);
+  var volH1 = capByPath(neH1, neM);
+  var tipVolH1 =
+    '━━ VOLUME H0 → H1 (OB SOBREPRESSÃO) ━━\n\n'+
+    'Gradiente do fluido:\n'+
+    '  ρ × 0,1704 = '+w.fd.toFixed(3)+' × 0,1704 = '+grad_m.toFixed(4)+' psi/m\n\n'+
+    'Metros para atingir +'+obH1+' psi:\n'+
+    '  '+obH1+' psi ÷ '+grad_m.toFixed(4)+' psi/m = '+metersH1.toFixed(1)+' m\n\n'+
+    'Nível Estático (h₀): '+neM.toFixed(0)+' m\n'+
+    'Novo NE (H1):        '+neH1.toFixed(1)+' m\n'+
+    'Via: '+pathLabels[path]+'\n'+
+    'Volume = cap('+neH1.toFixed(0)+'m → '+neM.toFixed(0)+'m)\n'+
+    '       = '+volH1.toFixed(3)+' bbl\n\n'+
+    'Este é o volume de partida do zero\n(NE estático → OB Sobrepressão).';
+
+  var obH1Label = obH1>0
+    ? '<div style="display:flex;align-items:baseline;gap:8px;margin:6px 0 2px">'
+      +'<span style="font-size:38px;font-weight:700;font-family:monospace;color:#C8952A">'+volH1.toFixed(2)+'</span>'
+      +'<span style="font-size:13px;color:var(--muted)">bbl</span>'
+      +tipWrap(tipVolH1)
+      +'</div>'
+      +'<div style="font-size:11px;color:var(--muted)">NE '+neM.toFixed(0)+' m → '+neH1.toFixed(1)+' m · '+metersH1.toFixed(1)+' m · +'+obH1+' psi · via '+pathLabels[path]+'</div>'
+    : '<div style="font-size:13px;color:var(--hint);padding:8px 0">Preencha o OB Sobrepressão em Dados do Poço.</div>';
+
+  var cardObH1 = obH1>0
+    ? '<div style="background:linear-gradient(135deg,rgba(200,149,42,.13) 0%,var(--card) 100%);border:1.5px solid rgba(200,149,42,.55);border-radius:12px;padding:14px 18px;margin:14px 0 6px">'
+      +'<div style="font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#8B5A00;margin-bottom:4px">💉 Volume para Atingir OB Sobrepressão (+'+obH1+' psi) — Partindo do NE h₀</div>'
+      +obH1Label
+      +'</div>'
+    : '';
+
   var html='<div class="result-grid">'+
     '<div class="result-card">'+
       '<div class="result-lbl">Nível Estático (h₀)</div>'+
@@ -1920,7 +1975,8 @@ function renderTestResults(){
       '<div class="result-val">'+volNeeded.toFixed(2)+'</div>'+
       '<div class="result-unit">bbl · novo NE ≈ '+newNE.toFixed(0)+' m</div>'+
     '</div>'+
-    '</div>';
+    '</div>'+
+    cardObH1;
 
   // ── Tabela por zona: BSW correto, cálculo em METROS ──
   var isBSW = w.fluidType === 'mistura';
@@ -2040,7 +2096,7 @@ function resetAll(){
   cfg=null; rds=[];
 
   // Limpa campos de texto/número
-  ['w_wellName','c_td','c_ne','c_ot','c_ib'].forEach(function(id){
+  ['w_wellName','c_td','c_ne','c_ot','c_obmin','c_ib'].forEach(function(id){
     var el=document.getElementById(id);
     if(el)el.value='';
   });
@@ -2153,7 +2209,8 @@ function ini(){
     alert('Poço equipado: adicione pelo menos uma seção de coluna (ou mude para Desequipado).');return;
   }
   var intMin=parseInt(document.getElementById('c_interval').value)||60;
-  var ot=parseFloat(document.getElementById('c_ot').value)||0;
+  var ot=parseFloat(document.getElementById('c_ot').value)||0;  // OB Sobrepressão (H1)
+  var obMin=parseFloat(document.getElementById('c_obmin').value)||0;  // OB Mínimo (colapso)
   var cb=columnBottomsM();
 
   // Se zonas não tiverem fp preenchido (=0) ou se fluidType indica que queremos recalcular via NE,
@@ -2172,7 +2229,7 @@ function ini(){
   });
 
   cfg={
-    td:w.tvd*3.28084, tdM:w.tvd, fd:w.fd, ot:ot,
+    td:w.tvd*3.28084, tdM:w.tvd, fd:w.fd, ot:ot, obMin:obMin,
     wellName:w.wellName||'',
     bsw:w.bsw, rhoWater:w.rhoWater, rhoOil:w.rhoOil,
     fluidType:w.fluidType,
@@ -2310,43 +2367,42 @@ function renderH1Banner(){
   // Volume pela via selecionada: de H1 até H0 (preencher esse intervalo)
   var volBbl=capByPath(h1.slM, h0.slM);
 
-  var tipH1='━━ VOLUME H0 → H1 ━━\n\n'+
+  var tipH1='━━ VOLUME H0 → H1 (OB SOBREPRESSÃO) ━━\n\n'+
     'Gradiente do fluido:\n'+
     '  ρ × 0,1704 = '+cfg.fd.toFixed(3)+' × 0,1704 = '+grad_m.toFixed(4)+' psi/m\n\n'+
-    'Metros de desnível necessários:\n'+
-    '  OB_alvo / gradiente = '+cfg.ot+' / '+grad_m.toFixed(4)+' = '+metersNeeded.toFixed(1)+' m\n\n'+
+    'Metros necessários para OB Sobrepressão ('+cfg.ot+' psi):\n'+
+    '  '+cfg.ot+' / '+grad_m.toFixed(4)+' = '+metersNeeded.toFixed(1)+' m\n\n'+
     'Nível Estático (h₀):  '+h0.slM.toFixed(0)+' m\n'+
     'Meta H1:              '+h1.slM.toFixed(1)+' m\n'+
-    'Desnível:             '+metersNeeded.toFixed(1)+' m\n\n'+
     'Via: '+pathLbl+'\n'+
     'Volume = cap('+h1.slM.toFixed(0)+'m → '+h0.slM.toFixed(0)+'m)\n'+
     '       = '+volBbl.toFixed(3)+' bbl';
 
   el.style.display='block';
   el.innerHTML=
-    '<div style="background:linear-gradient(135deg,var(--amber-bg) 0%,var(--card) 100%);border:1.5px solid rgba(45,106,79,.45);border-radius:12px;padding:16px 20px;margin-bottom:14px">'+
-      '<p class="sec" style="margin-bottom:10px">💉 Volume a Injetar — H0 → H1 (Atingir OB Alvo)</p>'+
-      '<div style="display:grid;grid-template-columns:auto 1fr;gap:6px 24px;align-items:center">'+
-
+    '<div style="background:linear-gradient(135deg,rgba(200,149,42,.1) 0%,var(--card) 100%);border:1.5px solid rgba(200,149,42,.5);border-radius:12px;padding:16px 20px;margin-bottom:10px">'+
+      '<p class="sec" style="margin-bottom:10px;color:#8B5A00">💉 Volume a Injetar — H0 → H1 (Atingir OB Sobrepressão)</p>'+
+      '<div style="display:grid;grid-template-columns:auto 1fr auto 1fr;gap:5px 16px;align-items:center;margin-bottom:10px">'+
         '<div style="font-size:11px;color:var(--muted)">Nível Estático h₀</div>'+
         '<div style="font-family:monospace;font-weight:600">'+h0.slM.toFixed(0)+' m</div>'+
-
-        '<div style="font-size:11px;color:var(--muted)">Meta H1 (OB +'+cfg.ot+' psi)</div>'+
-        '<div style="font-family:monospace;font-weight:600">'+h1.slM.toFixed(1)+' m</div>'+
-
-        '<div style="font-size:11px;color:var(--muted)">Desnível necessário</div>'+
-        '<div style="font-family:monospace;font-weight:600">'+metersNeeded.toFixed(1)+' m  <span style="font-size:10px;color:var(--muted);font-weight:400">('+cfg.ot+' psi ÷ '+grad_m.toFixed(4)+' psi/m)</span></div>'+
-
+        '<div style="font-size:11px;color:var(--muted)">OB Sobrepressão (H1)</div>'+
+        '<div style="font-family:monospace;font-weight:600;color:#8B5A00">+'+cfg.ot+' psi</div>'+
+        '<div style="font-size:11px;color:var(--muted)">Meta H1 (Sonolog)</div>'+
+        '<div style="font-family:monospace;font-weight:600;color:#8B5A00">'+h1.slM.toFixed(1)+' m</div>'+
         '<div style="font-size:11px;color:var(--muted)">Via</div>'+
         '<div style="font-family:monospace;font-weight:600">'+pathLbl+'</div>'+
-
+        '<div style="font-size:11px;color:var(--muted)">Desnível</div>'+
+        '<div style="font-family:monospace;font-weight:600;grid-column:2/-1">'+metersNeeded.toFixed(1)+' m &nbsp;<span style="font-size:10px;color:var(--muted);font-weight:400">('+cfg.ot+' psi ÷ '+grad_m.toFixed(4)+' psi/m)</span></div>'+
       '</div>'+
-      '<div style="margin-top:14px;display:flex;align-items:baseline;gap:10px">'+
-        '<span style="font-size:42px;font-weight:700;font-family:monospace;color:var(--amber)">'+volBbl.toFixed(2)+'</span>'+
-        '<span style="font-size:16px;color:var(--muted)">barris a injetar</span>'+
+      '<div style="display:flex;align-items:baseline;gap:10px;margin-top:6px">'+
+        '<span style="font-size:42px;font-weight:700;font-family:monospace;color:#C8952A">'+volBbl.toFixed(2)+'</span>'+
+        '<span style="font-size:15px;color:var(--muted)">barris para atingir sobrepressão +'+cfg.ot+' psi no H1</span>'+
         tipWrap(tipH1)+
       '</div>'+
-      '<p style="font-size:11px;color:var(--warn-text);margin-top:8px">⚠ Não considera absorção durante o bombeio. Monitore o Sonolog a cada intervalo e adicione leituras (H2, H3…) para ajustar.</p>'+
+      '<p style="font-size:11px;color:var(--warn-text);margin-top:10px;padding:8px 10px;background:rgba(200,149,42,.08);border-radius:6px">'+
+        '⚠ <strong>Após H1:</strong> registre H2, H3 e H4 a <strong>cada 30 minutos</strong> (obrigatório). '+
+        'A Janela Operacional será calculada automaticamente como a média do ΔP dessas leituras.'+
+      '</p>'+
     '</div>';
 }
 
@@ -2365,6 +2421,14 @@ function renderFinalResults(){
 
   // Overbalance proposto = OB efetivo atual na zona crítica (Ph aplicado - Pr)
   var obAtual = lat.bal; // já é phApplied - fp
+  // Janela fixa: média de H2, H3 e H4 (primeiras 3 leituras reais — fixo após H4)
+  var obsForJo = obs.slice(0, 3);
+  var joMinDyn = obsForJo.length>0
+    ? +(obsForJo.reduce(function(a,r){return a+r.bal;},0)/obsForJo.length).toFixed(1)
+    : Math.max(30,Math.round(cfg.ot*0.50));
+  var joMinLbl = obsForJo.length>0
+    ? 'Média H2–H'+(obsForJo.length+1)+': +'+joMinDyn+' psi'
+    : 'Est. 50%: +'+joMinDyn+' psi';
   // Recomendação: se rate alta → sugerir reduzir OB; se rate baixa → OB está OK
   var suggestion;
   var sugColor='var(--amber-text)';
@@ -2397,9 +2461,14 @@ function renderFinalResults(){
       '<div class="result-unit">bbl/h · '+obs.length+' leitura(s)</div>'+
     '</div>'+
     '<div class="result-card hot">'+
-      '<div class="result-lbl">Overbalance Efetivo (Ph − Pr)</div>'+
-      '<div class="result-val" style="color:'+(obAtual>=0?'var(--green)':'var(--red)')+'">'+(obAtual>=0?'+':'')+obAtual.toFixed(0)+'</div>'+
-      '<div class="result-unit">psi · zona '+lat.critZone+'</div>'+
+      '<div class="result-lbl">OB Efetivo Atual (Ph − Pr)</div>'+
+      '<div class="result-val" style="color:'+(obAtual>cfg.ot?'#8B5A00':obAtual>=joMinDyn?'var(--green)':'var(--red)')+'">'+(obAtual>=0?'+':'')+obAtual.toFixed(0)+'</div>'+
+      '<div class="result-unit">psi · '+lat.critZone+' · Sobrepressão H1: +'+cfg.ot+' psi</div>'+
+    '</div>'+
+    '<div class="result-card" style="background:rgba(45,106,79,.07);border-color:rgba(45,106,79,.25)">'+
+      '<div class="result-lbl">Janela Operacional Dinâmica</div>'+
+      '<div class="result-val" style="color:var(--amber)">+'+joMinDyn.toFixed(0)+'</div>'+
+      '<div class="result-unit">psi mín. · '+joMinLbl+'</div>'+
     '</div>'+
     '<div class="result-card cool">'+
       '<div class="result-lbl">Volume Próximo Intervalo ('+intLbl+')</div>'+
@@ -2478,6 +2547,23 @@ function upM(){
   document.getElementById('tbl').innerHTML=tblRows;
 
   var intBar=document.getElementById('int_bar');
+  // ── Fase de avaliação: atualiza tracker permanente H2/H3/H4 ──
+  var manualRdsAll=rds.filter(function(r){return !r.isInitialStatic&&!r.isAutoTarget;});
+  var manCount=manualRdsAll.length;
+  var ptEl=document.getElementById('phase_tracker');
+  if(ptEl){
+    ptEl.style.display=manCount>=3?'none':'flex';
+    ['h2','h3','h4'].forEach(function(hx,i){
+      var el2=document.getElementById('phase_'+hx);
+      if(!el2)return;
+      var done=manCount>i;
+      el2.style.background=done?'var(--amber)':'var(--card)';
+      el2.style.color=done?'white':'var(--muted)';
+      el2.style.borderColor=done?'var(--amber)':'var(--border)';
+    });
+    var pmsg=document.getElementById('phase_msg');
+    if(pmsg) pmsg.textContent='→ '+(3-Math.min(manCount,3))+' leitura(s) restante(s) a 30 min';
+  }
   intBar.style.display='grid';
   document.getElementById('int_lbl').textContent=intLbl;
   document.getElementById('int_path').textContent=pathLabels[cfg.path];
@@ -2486,10 +2572,11 @@ function upM(){
   document.getElementById('int_total').textContent=fmt_time(lat.h);
 
   var bal=lat.bal;
-  var badge=bal>cfg.ot?'<span class="bdg bo">▲ OVERBALANCE</span>':
-    bal>0?'<span class="bdg bw">≈ BALANCEADO</span>':
+  var badge=bal>joWindowMaxRec?'<span class="bdg bo">▲ SOBREPRESSÃO</span>':
+    bal>=joOBminRec?'<span class="bdg bw">◉ JANELA OK</span>':
+    bal>0?'<span class="bdg bw" style="background:rgba(200,149,42,.15);color:#8B5A00">⚠ SUB-JANELA</span>':
     '<span class="bdg bu">▼ UNDERBALANCE</span>';
-  var labelReading = lat.isInitialStatic?'Nível Estático Registrado (h₀)':lat.isAutoTarget?'Meta H1 — Alvo OB +'+lat.obAlvo+' psi':'Leitura Atual';
+  var labelReading = lat.isInitialStatic?'Nível Estático Registrado (h₀)':lat.isAutoTarget?'OB Sobrepressão H1 — +'+lat.obAlvo+' psi':'Leitura Atual';
 
   // Tooltips para os mc cards
   var grad_mc=0.052*cfg.fd*3.28084;
@@ -2543,8 +2630,19 @@ function upM(){
   // ── RECOMENDAÇÃO OPERACIONAL — 4 estados ──
   var crit=lat.zoneData.reduce(function(a,b){return a.bal<b.bal?a:b;});
   var dpAtual=crit.bal;
-  var joOBtgtRec=cfg.ot;
-  var joOBminRec=Math.max(30,Math.round(joOBtgtRec*0.50));
+  var joOBtgtRec=cfg.ot;  // OB Sobrepressão H1 — target de injeção (re-entrada)
+  // Janela Operacional mínima = OB Mínimo definido pelo usuário
+  var joOBminRec=cfg.obMin>0?cfg.obMin:Math.max(30,Math.round(joOBtgtRec*0.50));
+  // Janela fixa: média de H2, H3 e H4 (primeiras 3 leituras reais — não muda após H4)
+  var realRdsForJo=rds.filter(function(r){return !r.isInitialStatic&&!r.isAutoTarget;});
+  var last3Jo=realRdsForJo.slice(0,3);
+  var joCurrentAvgRec=last3Jo.length>0
+    ?+(last3Jo.reduce(function(a,r){return a+r.bal;},0)/last3Jo.length).toFixed(1)
+    :null;
+  // Limite superior da Janela = média H2/H3/H4 (fixa após H4); antes usa H1 como provisório
+  var joWindowMaxRec = joCurrentAvgRec!==null
+    ? Math.max(joCurrentAvgRec, joOBminRec)
+    : joOBtgtRec;
   var grad_m=0.1704*cfg.fd;
   var aa=avgA();
   var absInNext=aa*intH;
@@ -2593,17 +2691,17 @@ function upM(){
   document.getElementById('rec-box-aguardar').style.display='none';
   document.getElementById('recb').style.display='block';
 
-  if(dpAtual > joOBtgtRec){
+  if(dpAtual > joWindowMaxRec){
     // ── ESTADO 1: SOBREPRESSÃO — NÃO INJETAR ──
-    var excesso=dpAtual-joOBtgtRec;
+    var excesso=dpAtual-joWindowMaxRec;
     var mExcesso=excesso/grad_m;
     var timeToWindow=aa>0.01?(mExcesso*3.28084*capPF)/aa:null;
     var box=document.getElementById('rec-box-aguardar');
     box.style.display='block';
     document.getElementById('rec_v_aguardar').textContent=
-      'ΔP atual: +'+dpAtual.toFixed(0)+' psi  (excesso: +'+excesso.toFixed(0)+' psi acima do alvo)';
-    var dParts=['Suspender injeção imediatamente — poço '+excesso.toFixed(0)+' psi acima da janela operacional.'];
-    dParts.push('Aguardar absorção natural reduzir ΔP até ≤ +'+joOBtgtRec+' psi antes de retomar bombeio.');
+      'ΔP atual: +'+dpAtual.toFixed(0)+' psi  (excesso: +'+excesso.toFixed(0)+' psi acima da Janela)';
+    var dParts=['Suspender injeção imediatamente — poço '+excesso.toFixed(0)+' psi acima da janela operacional (Janela máx: +'+joWindowMaxRec.toFixed(0)+' psi).'];
+    dParts.push('Aguardar absorção natural reduzir ΔP até ≤ +'+joWindowMaxRec.toFixed(0)+' psi antes de retomar bombeio.');
     if(timeToWindow&&timeToWindow>0)
       dParts.push('Estimativa: ~'+timeToWindow.toFixed(1)+'h para retornar à janela (taxa abs. média: '+aa.toFixed(3)+' bbl/h).');
     else
@@ -2615,7 +2713,7 @@ function upM(){
     var volManter=Math.max(0,absInNext);
     var tipManter=
       '━━ MANTER POSIÇÃO NA JANELA ━━\n'+
-      '\nΔP atual: +'+dpAtual.toFixed(0)+' psi (janela: +'+joOBminRec+' … +'+joOBtgtRec+' psi)\n'+
+      '\nΔP atual: +'+dpAtual.toFixed(0)+' psi (janela: +'+joOBminRec+' … +'+joWindowMaxRec.toFixed(0)+' psi)\n'+
       '\nCOMPENSAÇÃO DE ABSORÇÃO\n'+
       '  Taxa méd. = '+aa.toFixed(4)+' bbl/h × '+intH.toFixed(2)+' h\n'+
       '  V = '+absInNext.toFixed(3)+' bbl\n'+
@@ -2623,7 +2721,7 @@ function upM(){
     var box2=document.getElementById('rec-box-manter');
     box2.style.display='block';
     document.getElementById('rec_v_manter').innerHTML=volManter.toFixed(2)+tipWrap(tipManter);
-    var mParts=['ΔP em +'+dpAtual.toFixed(0)+' psi → dentro da janela (min +'+joOBminRec+' / alvo +'+joOBtgtRec+' psi).'];
+    var mParts=['ΔP em +'+dpAtual.toFixed(0)+' psi → dentro da janela (mín +'+joOBminRec+' / máx +'+joWindowMaxRec.toFixed(0)+' psi).'];
     if(aa>0.01) mParts.push('Injetar '+volManter.toFixed(2)+' bbl para compensar absorção de '+aa.toFixed(3)+' bbl/h × '+intLbl+'.');
     else mParts.push('Absorção mínima — monitorar sem injetar no próximo intervalo.');
     document.getElementById('rec_d_manter').innerHTML=mParts.join('<br>→ ');
@@ -2789,60 +2887,75 @@ function uch(){
   destroy('ch_jo');
   // ── JANELA OPERACIONAL — ΔP (overbalance real) vs Tempo ──
   var critZoneJO = cfg.zones.reduce(function(a,b){return a.fp<b.fp?a:b;});
-  var joOBtarget = cfg.ot;
+  var joH1 = cfg.ot;   // OB Sobrepressão H1 — apenas referência (ponto de partida)
+  var joOBmin = cfg.obMin>0 ? cfg.obMin : Math.max(30, Math.round(joH1*0.50));  // Limite inferior = colapso
 
-  // ΔP real a cada leitura (r.bal = Ph_fundo − Pr_zona_critica) — definido ANTES do range
-  var joDPdata = rds.map(function(r){
+  // Exclui H0 do gráfico — começa do H1
+  var rdsForJo = rds.filter(function(r){ return !r.isInitialStatic; });
+
+  // ΔP real de cada leitura
+  var joDPdataAll = rdsForJo.map(function(r){
     var zd = r.zoneData
       ? (r.zoneData.find(function(z){return z.name===critZoneJO.name;})||r.zoneData[0])
       : null;
     return +((zd ? zd.bal : r.bal)||0).toFixed(1);
   });
 
-  // Janela operacional: mínimo seguro = 50% do OB alvo (não menos que 30 psi)
-  // Poço onshore workover: manter ΔP > 0 é obrigatório; abaixo do mínimo há risco de influxo
-  var joOBmin = Math.max(30, Math.round(joOBtarget * 0.50));
+  // Janela fixa: média de H2, H3 e H4 (primeiras 3 leituras reais — não muda após H4)
+  var realRdsJo = rds.filter(function(r){ return !r.isInitialStatic && !r.isAutoTarget; });
+  var last3JoChart = realRdsJo.slice(0, 3);
+  var joCurrentAvg = last3JoChart.length > 0
+    ? +(last3JoChart.reduce(function(a,r){return a+r.bal;},0)/last3JoChart.length).toFixed(1)
+    : null;
+  // Limite superior da zona verde: média H2/H3/H4 (fixa); senão H1 provisório
+  var joWindowMax = joCurrentAvg !== null ? joCurrentAvg : joH1;
+  var joWindowHasData = joCurrentAvg !== null;
+  var nLeit = last3JoChart.length;
+  var joCurrentAvgLabel = joWindowHasData
+    ? (nLeit < 3
+        ? 'H2–H'+(nLeit+1)+' (parcial, '+nLeit+'/3): +'+joCurrentAvg.toFixed(0)+' psi'
+        : 'Média H2·H3·H4: +'+joCurrentAvg.toFixed(0)+' psi (fixa)')
+    : 'Aguardando H2–H4';
 
-  // Range Y automático: engloba todos os ΔP reais + janela + 15% de padding
-  var dpMin = Math.min.apply(null, joDPdata);
-  var dpMax = Math.max.apply(null, joDPdata);
-  var rawMin = Math.min(dpMin, 0);          // sempre mostra o zero (balanceado)
-  var rawMax = Math.max(dpMax, joOBtarget); // sempre mostra o alvo
-  var rangePad = Math.max((rawMax - rawMin) * 0.15, 40);
+  // Range Y — garante que H1, joWindowMax e joOBmin ficam todos visíveis com espaço
+  var dpMin = Math.min.apply(null, joDPdataAll);
+  var dpMax = Math.max.apply(null, joDPdataAll);
+  var rawMin = Math.min(dpMin, joOBmin, 0);
+  var rawMax = Math.max(dpMax, joH1);
+  var rangePad = Math.max((rawMax - rawMin) * 0.22, 55);
   var joYMin = rawMin - rangePad;
   var joYMax = rawMax + rangePad;
 
-  // Cor de cada ponto/segmento
+  // Cores dos pontos/segmentos: usa joWindowMax como limiar superior e joOBmin como inferior
   function joSegColor(dp){
-    if(dp > joOBtarget) return 'rgba(45,106,79,.9)';   // sobrepressão (laranja)
-    if(dp < joOBmin)    return 'rgba(163,45,45,.9)';    // colapso (vermelho)
-    return 'rgba(15,110,86,.95)';                        // janela OK (verde)
+    if(dp > joWindowMax) return 'rgba(200,149,42,.9)';  // sobrepressão — acima da média
+    if(dp < joOBmin)     return 'rgba(163,45,45,.9)';   // colapso — abaixo do OB Mín
+    return 'rgba(15,110,86,.95)';                        // janela OK
   }
-  var joPtColors = joDPdata.map(joSegColor);
+  var joPtColors = joDPdataAll.map(joSegColor);
 
-  // Labels X: duas linhas — tempo + ΔP em psi, coloridas por zona
-  var joXLabels = rds.map(function(r,i){
-    var dp=joDPdata[i];
-    var timeLbl = r.isInitialStatic ? 'h₀ (NE)' : lbl_step(r.h);
+  var joXLabels = rdsForJo.map(function(r,i){
+    var dp = joDPdataAll[i];
+    var timeLbl = r.isAutoTarget ? 'H1 ⊙' : lbl_step(r.h);
     var dpSign  = dp>=0?'+':'';
     return [timeLbl, dpSign+Math.round(dp)+' psi'];
   });
-  var joTickColors = joDPdata.map(function(dp){
-    if(dp > joOBtarget) return isDark?'#A0DFBE':'#8B5A00';
-    if(dp < joOBmin)    return isDark?'#F7C1C1':'#a32d2d';
+  var joTickColors = joDPdataAll.map(function(dp){
+    if(dp > joWindowMax) return isDark?'#FFD54F':'#8B5A00';
+    if(dp < joOBmin)     return isDark?'#F7C1C1':'#a32d2d';
     return isDark?'#9FE1CB':'#0f6e56';
   });
 
   var joDS=[{
     label:'ΔP Overbalance (psi)',
-    data:joDPdata,
+    data:joDPdataAll,
     borderColor:'#378ADD',
     backgroundColor:joPtColors,
     pointBackgroundColor:joPtColors,
     pointBorderColor:joPtColors,
     tension:.3,
     fill:false,
-    pointRadius:rds.map(function(_,i){return i===rds.length-1?9:6;}),
+    pointRadius:rdsForJo.map(function(_,i){return i===rdsForJo.length-1?9:6;}),
     pointHoverRadius:10,
     borderWidth:2.5,
     segment:{
@@ -2853,41 +2966,81 @@ function uch(){
     }
   }];
 
-  // Plugin: faixas coloridas + labels das zonas
+  // Plugin: faixas coloridas + linhas de referência + labels
   var joPlugin={
     id:'joZones',
     beforeDraw:function(chart){
       var c=chart.ctx, yS=chart.scales.y, xS=chart.scales.x;
       var xL=xS.left, xR=xS.right;
       var yA=chart.chartArea.top, yB=chart.chartArea.bottom;
-      var y0  = yS.getPixelForValue(joOBmin);
-      var yTgt= yS.getPixelForValue(joOBtarget);
+      var yMin    = yS.getPixelForValue(joOBmin);     // OB Mínimo — limite colapso
+      var yWinMax = yS.getPixelForValue(joWindowMax); // Média 3 leit. — limite superior Janela
+      var yH1     = yS.getPixelForValue(joH1);        // H1 Sobrepressão — só referência
+
       c.save();
-      // Sobrepressão (acima da janela) — âmbar
-      c.fillStyle='rgba(200,149,42,.13)';
-      c.fillRect(xL, yA, xR-xL, Math.max(0, yTgt-yA));
-      // Janela operacional (verde)
-      c.fillStyle='rgba(15,110,86,.10)';
-      c.fillRect(xL, yTgt, xR-xL, Math.max(0, y0-yTgt));
-      // Colapso (abaixo de 0)
-      c.fillStyle='rgba(163,45,45,.11)';
-      c.fillRect(xL, y0, xR-xL, Math.max(0, yB-y0));
-      // Rótulos de zona
+
+      // ── FAIXAS DE ZONA ──
+      // Sobrepressão: acima de joWindowMax (média 3 leit.)
+      c.fillStyle='rgba(200,149,42,.12)';
+      c.fillRect(xL, yA, xR-xL, Math.max(0, yWinMax-yA));
+
+      // Janela Operacional: entre OB Mín e joWindowMax (só se joWindowMax > joOBmin)
+      if(joWindowMax > joOBmin){
+        c.fillStyle='rgba(15,110,86,.09)';
+        c.fillRect(xL, yWinMax, xR-xL, Math.max(0, yMin-yWinMax));
+      }
+
+      // Colapso: abaixo de OB Mín
+      c.fillStyle='rgba(163,45,45,.10)';
+      c.fillRect(xL, yMin, xR-xL, Math.max(0, yB-yMin));
+
+      // ── LINHAS ──
+      // Linha H1 (OB Sobrepressão) — âmbar pontilhada mais suave, só referência
+      c.setLineDash([4,7]); c.lineWidth=1.4;
+      c.strokeStyle='rgba(200,149,42,.55)';
+      c.beginPath(); c.moveTo(xL,yH1); c.lineTo(xR,yH1); c.stroke();
+
+      // Linha joWindowMax (Média 3 leit. = teto da Janela) — verde sólida
+      c.setLineDash([]); c.lineWidth=2.0;
+      c.strokeStyle='rgba(15,110,86,.80)';
+      c.beginPath(); c.moveTo(xL,yWinMax); c.lineTo(xR,yWinMax); c.stroke();
+
+      // Linha OB Mínimo (piso da Janela) — vermelha tracejada
+      c.setLineDash([5,4]); c.lineWidth=1.6;
+      c.strokeStyle='rgba(163,45,45,.60)';
+      c.beginPath(); c.moveTo(xL,yMin); c.lineTo(xR,yMin); c.stroke();
+
+      c.setLineDash([]);
+
+      // ── RÓTULOS DE ZONA ──
       c.font='bold 10px sans-serif';
-      var midSob=(yA+yTgt)/2, midJan=(yTgt+y0)/2, midCol=(y0+yB)/2;
-      c.fillStyle=isDark?'rgba(250,199,117,.75)':'rgba(130,75,0,.7)';
-      c.fillText('▲ SOBREPRESSÃO',xL+10,Math.max(yA+14,midSob));
-      c.fillStyle=isDark?'rgba(93,202,165,.85)':'rgba(8,90,65,.75)';
-      c.fillText('◉ JANELA OPERACIONAL (+'+joOBmin+' … +'+joOBtarget+' psi)',xL+10,midJan);
+      var midSob  = (yA + yWinMax) / 2;
+      var midJan  = joWindowMax > joOBmin ? (yWinMax + yMin) / 2 : -9999;
+      var midCol  = (yMin + yB) / 2;
+
+      // Sobrepressão
+      c.fillStyle=isDark?'rgba(255,213,79,.8)':'rgba(130,75,0,.75)';
+      c.fillText('▲ SOBREPRESSÃO (acima da Janela: +'+joWindowMax.toFixed(0)+' psi)', xL+10, Math.max(yA+14, midSob));
+
+      // Janela (só exibe se zona verde existe)
+      if(joWindowMax > joOBmin && midJan > 0){
+        c.fillStyle=isDark?'rgba(93,202,165,.75)':'rgba(8,90,65,.55)';
+        c.fillText('◉ JANELA OPERACIONAL (+'+joOBmin.toFixed(0)+' … +'+joWindowMax.toFixed(0)+' psi)', xL+10, midJan);
+      }
+
+      // Colapso
       c.fillStyle=isDark?'rgba(240,149,149,.75)':'rgba(130,30,30,.7)';
-      c.fillText('▼ ZONA DE COLAPSO',xL+10,Math.min(yB-6,midCol));
-      // Linha do target
-      c.setLineDash([6,4]);c.lineWidth=1.5;
-      c.strokeStyle='rgba(15,110,86,.55)';
-      c.beginPath();c.moveTo(xL,yTgt);c.lineTo(xR,yTgt);c.stroke();
-      // Linha do zero
-      c.strokeStyle='rgba(163,45,45,.45)';
-      c.beginPath();c.moveTo(xL,y0);c.lineTo(xR,y0);c.stroke();
+      c.fillText('▼ ZONA DE COLAPSO (abaixo de OB Mín: +'+joOBmin.toFixed(0)+' psi)', xL+10, Math.min(yB-6, midCol));
+
+      // Label da linha Janela máxima (média)
+      c.font='bold 9px sans-serif';
+      c.fillStyle=isDark?'rgba(93,202,165,.9)':'rgba(8,90,65,.85)';
+      c.fillText('◉ '+joCurrentAvgLabel, xL+10, yWinMax-5);
+
+      // Label da linha H1 (referência)
+      c.fillStyle=isDark?'rgba(255,213,79,.7)':'rgba(130,75,0,.6)';
+      c.fillText('⊙ H1 ref.: +'+joH1+' psi', xL+10, yH1-5);
+
       c.restore();
     }
   };
@@ -2901,19 +3054,23 @@ function uch(){
         legend:{display:false},
         tooltip:{callbacks:{
           title:function(items){
-            var r=rds[items[0].dataIndex];
-            return r.isInitialStatic?'h₀ — Nível Estático Registrado':lbl_step(r.h);
+            var r=rdsForJo[items[0].dataIndex];
+            if(!r)return '';
+            return r.isAutoTarget?'H1 — OB Sobrepressão +'+r.obAlvo+' psi':lbl_step(r.h);
           },
           label:function(ctx){
             if(ctx.datasetIndex!==0)return null;
             var dp=ctx.parsed.y;
             var sign=dp>=0?'+':'';
-            var zone=dp>joOBtarget?'⬆ Sobrepressão (acima do alvo)':
-                     dp<joOBmin?'⬇ Colapso (underbalance)':
-                     '✓ Dentro da Janela Operacional';
-            var dist=dp>joOBtarget?'+'+(dp-joOBtarget).toFixed(0)+' psi acima do alvo':
-                     dp<joOBmin?(-dp).toFixed(0)+' psi de deficit':
-                     (joOBtarget-dp).toFixed(0)+' psi para atingir alvo';
+            var zone=dp>joWindowMax?'▲ Sobrepressão (acima da Janela)':
+                     dp<joOBmin?'▼ Colapso (abaixo do OB Mín)':
+                     '✓ Janela Operacional';
+            var ref=joWindowHasData
+              ?'Janela: +'+joOBmin.toFixed(0)+' … +'+joWindowMax.toFixed(0)+' psi'
+              :'H1 (ref.): +'+joH1+' psi';
+            var dist=dp>joWindowMax?'+'+(dp-joWindowMax).toFixed(0)+' psi acima da Janela':
+                     dp<joOBmin?'+'+(joOBmin-dp).toFixed(0)+' psi abaixo do OB Mín':
+                     ref;
             return ['ΔP: '+sign+dp.toFixed(0)+' psi','Zona: '+zone,'  → '+dist];
           }
         }}
@@ -2937,8 +3094,9 @@ function uch(){
             }
           },
           grid:{color:function(ctx){
-            if(Math.abs(ctx.tick.value-joOBmin)<0.5)return 'rgba(163,45,45,.4)';
-            if(Math.abs(ctx.tick.value-joOBtarget)<0.5)return 'rgba(15,110,86,.4)';
+            if(Math.abs(ctx.tick.value-joOBmin)<0.5)    return 'rgba(163,45,45,.4)';
+            if(Math.abs(ctx.tick.value-joWindowMax)<0.5) return 'rgba(15,110,86,.35)';
+            if(Math.abs(ctx.tick.value-joH1)<0.5)        return 'rgba(200,149,42,.3)';
             return gc;
           }},
           title:{display:true,text:'Overbalance ΔP (psi)',color:tc,font:{size:10}}
@@ -2947,10 +3105,14 @@ function uch(){
     },
     plugins:[joPlugin]
   });
+
+  var legJanLabel = joWindowHasData
+    ? 'Janela Operacional — OB Mín +'+joOBmin.toFixed(0)+' … '+joCurrentAvgLabel
+    : 'Janela Operacional — OB Mín +'+joOBmin.toFixed(0)+' psi (aguardando H2–H4)';
   mk_legend('leg_jo',[
-    {color:'rgba(15,110,86,.9)',label:'Dentro da Janela'},
-    {color:'rgba(200,149,42,.9)',label:'Sobrepressão'},
-    {color:'rgba(163,45,45,.9)',label:'Colapso (underbalance)'}
+    {color:'rgba(15,110,86,.9)',  label:legJanLabel},
+    {color:'rgba(200,149,42,.9)', label:'Sobrepressão (acima da Janela: +'+joWindowMax.toFixed(0)+' psi)'},
+    {color:'rgba(163,45,45,.9)',  label:'Colapso (abaixo do OB Mín: +'+joOBmin.toFixed(0)+' psi)'}
   ]);
 
   // Chart 1: Sonolog level
