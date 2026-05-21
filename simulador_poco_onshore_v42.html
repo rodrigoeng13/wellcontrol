@@ -1,0 +1,3640 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Controle de Poço — PetroRecôncavo</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<style>
+  :root {
+    /* PetroRecôncavo — paleta verde */
+    --bg:#F7FBF8;--card:#ffffff;--card2:#F2F9F5;--border:rgba(27,77,46,.08);--border2:rgba(27,77,46,.15);
+    --text:#1A3025;--muted:#5A7D6A;--hint:#8FB89E;
+    --amber:#3A7D5C;--amber-bg:#EDF7F2;--amber-text:#1E5436;
+    --green:#388E3C;--green-bg:#E8F5E9;--green-text:#1B5E20;
+    --red:#C62828;--red-bg:#FFEBEE;--red-text:#7F0000;
+    --blue:#1565C0;--warn-bg:#FFF8E1;--warn-text:#7B5800;
+    --gold:#C8952A;--gold-bg:#FDF4E3;
+  }
+  @media(prefers-color-scheme:dark){
+    :root{
+      --bg:#0D1F14;--card:#122A1A;--card2:#1A3824;--border:rgba(255,255,255,.1);--border2:rgba(255,255,255,.18);
+      --text:#D4EDE1;--muted:#80C49A;--hint:#4A8A60;
+      --amber:#5DBF8A;--amber-bg:rgba(45,106,79,.25);--amber-text:#A0DFBE;
+      --green:#66BB6A;--green-bg:rgba(56,142,60,.2);--green-text:#A5D6A7;
+      --red:#EF9A9A;--red-bg:rgba(198,40,40,.15);--red-text:#FFCDD2;
+      --blue:#90CAF9;--warn-bg:rgba(200,149,42,.15);--warn-text:#FFD54F;
+      --gold:#E8B84B;--gold-bg:rgba(200,149,42,.15);
+    }
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  html{background:var(--bg);font-family:-apple-system,'Segoe UI',system-ui,sans-serif;color:var(--text);font-size:14px;}
+  body{max-width:1020px;margin:0 auto;padding:16px 12px 60px;}
+  /* PetroRecôncavo: body background handled via --bg variable */
+  header{display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:20px;border-bottom:1px solid var(--border);padding-bottom:14px;}
+  header h1{font-size:18px;font-weight:600;letter-spacing:-.02em;}
+  header span{font-size:11px;color:var(--muted);}
+  .tabs{display:flex;gap:2px;border-bottom:1px solid var(--border);margin-bottom:18px;}
+  .tbt{padding:8px 16px;background:none;border:none;border-bottom:2px solid transparent;cursor:pointer;font-size:13px;color:var(--muted);transition:.15s;}
+  .tbt:hover{color:var(--text);}
+  .tbt.on{color:var(--amber);border-bottom-color:var(--amber);font-weight:500;}
+  .sec{font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:10px;}
+  .sec-num{display:inline-block;background:var(--amber);color:white;padding:2px 7px;border-radius:4px;font-size:10px;margin-right:6px;font-weight:700;}
+  .card{background:var(--card);border:0.5px solid var(--border);border-radius:12px;padding:16px;margin-bottom:14px;}
+  .card-highlight{border-color:rgba(58,125,92,.3);border-width:1px;background:linear-gradient(180deg,var(--amber-bg) 0%,var(--card) 40%);}
+  .fg{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:12px;}
+  .fl label{display:block;font-size:11px;color:var(--muted);margin-bottom:3px;}
+  .m2ft{color:var(--blue);font-weight:500;margin-left:4px;}
+  .fl input[type=number],.fl input[type=text]{width:100%;padding:7px 10px;border:0.5px solid var(--border2);border-radius:7px;background:var(--card2);color:var(--text);font-size:13px;font-family:'SF Mono',monospace;}
+  .fl input:focus{outline:2px solid var(--amber);border-color:transparent;}
+  .fl select{width:100%;padding:7px 10px;border:0.5px solid var(--border2);border-radius:7px;background:var(--card2);color:var(--text);font-size:13px;cursor:pointer;}
+  .fl select:focus{outline:2px solid var(--amber);border-color:transparent;}
+  .fl .hint{font-size:10px;color:var(--hint);margin-top:3px;}
+  .fl input[disabled],.fl input:disabled{opacity:.75;background:rgba(0,0,0,.03);color:var(--muted);}
+  @media(prefers-color-scheme:dark){.fl input[disabled]{background:rgba(255,255,255,.03);}}
+  .mg{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin-bottom:14px;}
+  @media(max-width:540px){.mg{grid-template-columns:repeat(2,1fr);}}
+  .mc{background:var(--card2);border-radius:8px;padding:10px 12px;}
+  .ml{font-size:10px;color:var(--muted);margin-bottom:2px;}
+  .mv{font-size:20px;font-weight:600;font-family:'SF Mono','Fira Code',monospace;}
+  .mu{font-size:10px;color:var(--hint);}
+  .btn{padding:7px 16px;border-radius:8px;border:0.5px solid var(--border2);cursor:pointer;font-size:13px;background:transparent;color:var(--text);transition:.15s;}
+  .btn:hover{background:var(--card2);}
+  .btn.pr{background:var(--amber);border-color:var(--amber);color:white;}
+  .btn.pr:hover{filter:brightness(.88);}
+  .btn.xl{background:#276221;border-color:#276221;color:white;}
+  .btn.xl:hover{filter:brightness(.88);}
+  .btn.xl:disabled,.btn:disabled{opacity:.55;cursor:default;filter:none;}
+  .btn-row{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:16px;}
+  .bdg{display:inline-flex;align-items:center;padding:3px 10px;border-radius:999px;font-size:11px;font-weight:600;}
+  .bo{background:var(--green-bg);color:var(--green-text);}
+  .bu{background:var(--red-bg);color:var(--red-text);}
+  .bw{background:var(--warn-bg);color:var(--warn-text);}
+  .rec-box{background:linear-gradient(135deg,var(--amber-bg) 0%,var(--card) 100%);border:1px solid rgba(45,106,79,.18);border-radius:12px;padding:16px;margin:14px 0;}
+  .rec-v{font-size:36px;font-weight:700;font-family:'SF Mono',monospace;color:var(--amber);}
+  .rec-d{font-size:12px;color:var(--muted);margin-top:6px;line-height:1.6;}
+  .result-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;margin:14px 0;}
+  .result-card{padding:14px;border-radius:10px;background:var(--card2);border:0.5px solid var(--border);position:relative;}
+  .result-card.hot{background:var(--amber-bg);border-color:rgba(45,106,79,.18);}
+  .result-card.cool{background:var(--green-bg);border-color:rgba(15,110,86,.3);}
+  .result-lbl{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:5px;}
+  .result-val{font-size:26px;font-weight:700;font-family:'SF Mono',monospace;color:var(--text);}
+  .result-card.hot .result-val{color:var(--amber-text);}
+  .result-card.cool .result-val{color:var(--green-text);}
+  .result-unit{font-size:11px;color:var(--muted);margin-top:3px;}
+  table{width:100%;border-collapse:collapse;font-size:12px;}
+  th{font-size:10px;color:var(--muted);text-align:left;padding:5px 8px;border-bottom:1px solid var(--border);font-weight:600;white-space:nowrap;}
+  td{padding:6px 8px;border-bottom:0.5px solid var(--border);font-family:'SF Mono',monospace;white-space:nowrap;}
+  tr:last-child td{border-bottom:none;}
+  .over-row td{background:rgba(15,110,86,.06);}
+  .under-row td{background:rgba(163,45,45,.05);}
+  .info-bar{background:var(--card2);border-radius:8px;padding:10px 14px;font-size:11px;color:var(--muted);display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px 20px;margin-bottom:14px;align-items:center;}
+  .info-bar strong{color:var(--text);font-weight:600;}
+  .cw{position:relative;width:100%;height:260px;margin-bottom:6px;}
+  .cw2{position:relative;width:100%;height:200px;margin-bottom:6px;}
+  hr{border:none;border-top:0.5px solid var(--border);margin:16px 0;}
+  .st{color:var(--green);}.sd{color:var(--red);}
+  .chk-label{display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer;margin-bottom:12px;}
+  .chk-label input{accent-color:var(--amber);width:15px;height:15px;}
+  .legend-row{display:flex;flex-wrap:wrap;gap:12px;margin-bottom:8px;}
+  .leg{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--muted);}
+  .leg-dot{width:10px;height:10px;border-radius:2px;flex-shrink:0;}
+  .leg-dash{width:20px;height:2px;flex-shrink:0;}
+  .tbl-wrap{overflow-x:auto;}
+  .abs-proj{font-size:12px;background:var(--card2);border-radius:8px;padding:10px 14px;margin-bottom:12px;}
+  .abs-proj .lbl{color:var(--muted);font-size:10px;text-transform:uppercase;letter-spacing:.06em;}
+  .abs-proj .val{font-size:22px;font-weight:700;font-family:monospace;color:var(--amber);}
+  .proj-banner{background:var(--warn-bg);border-left:3px solid var(--amber);border-radius:0 8px 8px 0;padding:8px 12px;font-size:12px;color:var(--warn-text);margin:10px 0 16px;}
+  .dyn-section{border:1px solid var(--border);border-radius:8px;padding:12px;margin-bottom:8px;background:var(--card2);position:relative;}
+  .dyn-section .dyn-remove{position:absolute;top:8px;right:8px;background:var(--red-bg);color:var(--red-text);border:none;border-radius:6px;padding:3px 8px;font-size:11px;cursor:pointer;}
+  .dyn-section .dyn-remove:hover{filter:brightness(.85);}
+  .dyn-title{font-size:11px;font-weight:600;color:var(--amber-text);margin-bottom:8px;}
+  .add-btn{border:1px dashed var(--border2);border-radius:8px;padding:8px;text-align:center;font-size:12px;color:var(--muted);cursor:pointer;transition:.15s;}
+  .add-btn:hover{background:var(--card2);color:var(--text);}
+  .zone-chips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px;}
+  .zone-chip{padding:4px 10px;border-radius:6px;font-size:11px;font-weight:600;background:var(--amber-bg);color:var(--amber-text);}
+  .zone-chip.critical{background:var(--red-bg);color:var(--red-text);}
+  @media print{.btn,.btn-row,.tabs{display:none;}}
+  .btn.pdf{background:#8B0000;border-color:#8B0000;color:white;}
+  .btn.pdf:hover{filter:brightness(.88);}
+  .cap-tbl{width:100%;border-collapse:collapse;font-size:12px;margin-top:6px;}
+  .cap-tbl th{background:var(--card2);color:var(--text);padding:8px 10px;border-bottom:1px solid var(--border);font-size:11px;font-weight:600;text-align:left;text-transform:none;letter-spacing:0;}
+  .cap-tbl td{padding:7px 10px;border-bottom:0.5px solid var(--border);font-family:'SF Mono',monospace;font-size:12px;}
+  .cap-tbl tr:last-child td{border-bottom:none;}
+  .cap-tbl td.lbl{font-family:-apple-system,sans-serif;color:var(--muted);}
+  /* ===== TOOLTIP DE FÓRMULA ===== */
+  .tip-wrap{display:inline-block;position:relative;cursor:help;color:var(--blue);font-size:10px;vertical-align:middle;margin-left:5px;font-weight:700;user-select:none;}
+  .tip-box{display:none;position:absolute;z-index:300;bottom:calc(100% + 6px);left:50%;transform:translateX(-50%);
+    background:#17171500;color:#e8e7e0;padding:10px 13px;border-radius:9px;
+    font-family:'SF Mono','Fira Code',monospace;font-size:11px;white-space:pre;
+    min-width:260px;max-width:420px;line-height:1.7;
+    box-shadow:0 6px 24px rgba(0,0,0,.5);pointer-events:none;
+    border:0.5px solid rgba(255,255,255,.18);backdrop-filter:blur(4px);}
+  .tip-box::after{content:'';position:absolute;top:100%;left:50%;transform:translateX(-50%);border:5px solid transparent;border-top-color:#1e1e1b;}
+  .tip-wrap:hover .tip-box,.tip-wrap:focus .tip-box{display:block;}
+  /* em telas mais escuras garante legibilidade */
+  @media(prefers-color-scheme:light){
+    .tip-box{background:#1e1e1b;border-color:rgba(255,255,255,.12);}
+    .tip-box::after{border-top-color:#1e1e1b;}
+  }
+  /* result-cards e mc clicáveis com cursor de ajuda quando têm tooltip */
+  .result-card.has-tip,.mc.has-tip{cursor:help;}
+  .result-card.has-tip .tip-box,.mc .tip-box{min-width:300px;}
+  /* Badge BSW auto */
+  .bsw-auto{font-size:10px;color:var(--amber);font-weight:700;margin-left:5px;vertical-align:middle;}
+  /* ===== MODAL FÓRMULAS (5 cliques no título) ===== */
+  #formulaModal{display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.55);backdrop-filter:blur(3px);overflow-y:auto;}
+  #formulaPanel{background:var(--card);border:1px solid var(--amber);border-radius:14px;max-width:780px;margin:40px auto;padding:24px;position:relative;}
+  #formulaPanel h2{font-size:15px;font-weight:700;color:var(--amber);margin-bottom:14px;letter-spacing:-.01em;}
+  #formulaPanel .fm-close{position:absolute;top:14px;right:16px;background:none;border:none;font-size:20px;cursor:pointer;color:var(--muted);}
+  #formulaPanel .fm-close:hover{color:var(--text);}
+  .fm-tbl{width:100%;border-collapse:collapse;font-size:12px;margin-bottom:18px;}
+  .fm-tbl th{background:var(--card2);color:var(--text);padding:7px 10px;border-bottom:1px solid var(--border);font-size:11px;font-weight:600;text-align:left;}
+  .fm-tbl td{padding:6px 10px;border-bottom:0.5px solid var(--border);vertical-align:top;}
+  .fm-tbl td:first-child{color:var(--muted);font-weight:600;white-space:nowrap;}
+  .fm-tbl td:nth-child(2){font-family:'SF Mono',monospace;color:var(--blue);font-size:11px;}
+  .fm-tbl td:last-child{color:var(--hint);font-size:11px;}
+  .fm-tbl tr:last-child td{border-bottom:none;}
+  .fm-sec{font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin:14px 0 6px;}
+</style>
+</head>
+<body>
+
+<!-- ===== MODAL DE FÓRMULAS (5 cliques no título) ===== -->
+<div id="formulaModal" onclick="if(event.target===this)closeFormulas()">
+  <div id="formulaPanel">
+    <button class="fm-close" onclick="closeFormulas()">✕</button>
+    <h2>📐 Referência de Fórmulas — Controle de Poço</h2>
+
+    <p class="fm-sec">HIDROSTÁTICA & GRADIENTE</p>
+    <table class="fm-tbl">
+      <tr><th>Parâmetro</th><th>Fórmula</th><th>Unidades / Observação</th></tr>
+      <tr><td>Gradiente (psi/ft)</td><td>G = 0,052 × ρ (ppg)</td><td>Para água doce: 0,052 × 8,33 = 0,433 psi/ft</td></tr>
+      <tr><td>Gradiente (psi/m)</td><td>G_m = 0,052 × ρ × 3,28084</td><td>Conversão ft → m</td></tr>
+      <tr><td>Pressão Hidrostática</td><td>Ph = 0,052 × ρ × h (ft)</td><td>h = coluna de fluido em ft</td></tr>
+      <tr><td>Ph em metros</td><td>Ph = G_m × h_m</td><td>h_m = coluna em metros</td></tr>
+    </table>
+
+    <p class="fm-sec">CAPACIDADE VOLUMÉTRICA (bbl/ft)</p>
+    <table class="fm-tbl">
+      <tr><th>Parâmetro</th><th>Fórmula</th><th>Observação</th></tr>
+      <tr><td>Espaço Anular</td><td>C_an = (ID²_rev − OD²_col) / 1029,4</td><td>IDs em polegadas, resultado em bbl/ft</td></tr>
+      <tr><td>Interior da Coluna</td><td>C_col = ID²_col / 1029,4</td><td>ID da coluna em polegadas</td></tr>
+      <tr><td>Volume (bbl)</td><td>V = C (bbl/ft) × h (ft)</td><td>h = comprimento do intervalo</td></tr>
+      <tr><td>U-effect (ambos)</td><td>V_total = V_an + V_col</td><td>Coluna + Anular simultâneos</td></tr>
+    </table>
+
+    <p class="fm-sec">PRESSÃO DO RESERVATÓRIO & OVERBALANCE</p>
+    <table class="fm-tbl">
+      <tr><th>Parâmetro</th><th>Fórmula</th><th>Observação</th></tr>
+      <tr><td>Pr pelo Nível Estático</td><td>Pr = 0,052 × ρ × (z_topo − h₀) × 3,28084</td><td>h₀ = nível estático registrado (m)</td></tr>
+      <tr><td>Overbalance (ΔP)</td><td>ΔP = Ph_fundo − Pr_zona</td><td>ΔP &gt; 0 = overbalance; &lt; 0 = underbalance</td></tr>
+      <tr><td>Alvo de Pressão</td><td>Ph_alvo = Pr + OB_alvo</td><td>OB_alvo definido pelo operador</td></tr>
+      <tr><td>Déficit</td><td>Déficit = max(0, Ph_alvo − Ph_atual)</td><td>0 se já em overbalance</td></tr>
+    </table>
+
+    <p class="fm-sec">VOLUME DE INJEÇÃO NECESSÁRIO</p>
+    <table class="fm-tbl">
+      <tr><th>Parâmetro</th><th>Fórmula</th><th>Observação</th></tr>
+      <tr><td>Metros de coluna</td><td>m = Déficit (psi) / G_m (psi/m)</td><td>Metros de fluido a adicionar</td></tr>
+      <tr><td>Novo NE</td><td>NE_novo = NE_atual − m</td><td>Sobe o nível em m metros</td></tr>
+      <tr><td>Volume a bombear</td><td>V = Cap(NE_novo → NE_atual)</td><td>Via selecionada (anular/coluna/ambos)</td></tr>
+      <tr><td>+ Compensação abs.</td><td>V_total = V_inj + (q_abs × Δt)</td><td>q_abs = taxa média de absorção (bbl/h)</td></tr>
+    </table>
+
+    <p class="fm-sec">TAXA DE ABSORÇÃO & PROJEÇÃO</p>
+    <table class="fm-tbl">
+      <tr><th>Parâmetro</th><th>Fórmula</th><th>Observação</th></tr>
+      <tr><td>Volume absorvido</td><td>Abs_i = Inj_i − (V_i − V_{i-1})</td><td>Diferença entre injetado e ganho de volume</td></tr>
+      <tr><td>Taxa de absorção</td><td>q = Abs / Δt (h)</td><td>bbl/h por intervalo</td></tr>
+      <tr><td>Taxa média (3 últ.)</td><td>q_med = Σq / n  (n ≤ 3)</td><td>Média das últimas 3 leituras</td></tr>
+      <tr><td>Projeção (regressão)</td><td>y = a·x + b  (mín. quadrados)</td><td>x = tempo acumulado (h); y = absorção acumulada</td></tr>
+    </table>
+
+    <p class="fm-sec">JANELA OPERACIONAL (RECOMENDAÇÃO)</p>
+    <table class="fm-tbl">
+      <tr><th>Estado</th><th>Condição</th><th>Ação Recomendada</th></tr>
+      <tr><td>Colapso</td><td>ΔP &lt; 0</td><td>🚨 Injeção urgente — Ph &lt; Pr, risco de influxo</td></tr>
+      <tr><td>Sub-mínimo</td><td>0 ≤ ΔP &lt; 50% OB_alvo</td><td>⚠ Retomar injeção até atingir janela</td></tr>
+      <tr><td>Janela OK</td><td>50% OB_alvo ≤ ΔP ≤ OB_alvo</td><td>✓ Injetar só para compensar absorção</td></tr>
+      <tr><td>Sobrepressão</td><td>ΔP &gt; OB_alvo</td><td>🛑 Suspender bombeio — aguardar absorção natural</td></tr>
+    </table>
+
+    <p style="font-size:10px;color:var(--muted);margin-top:8px">Referências: API RP 100-2 · Petrobras N-2050 · IADC Well Control Manual · 0,052 = fator de conversão ppg→psi/ft</p>
+  </div>
+</div>
+
+
+<!-- Faixa de identidade PetroRecôncavo -->
+<div style="height:3px;background:linear-gradient(90deg,#C8952A 0%,#E8B84B 40%,#C8952A 100%);opacity:.75;margin:-16px -12px 0;"></div>
+
+<header style="border-bottom:1px solid var(--border);padding-bottom:14px;margin-bottom:20px;margin-top:18px">
+  <div style="display:flex;align-items:center;gap:14px">
+    <!-- Ícone da marca -->
+    <div style="width:38px;height:38px;background:#2D6A4F;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;box-shadow:0 2px 8px rgba(27,77,46,.12)">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#C8952A" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M12 2C8 2 5 5 5 9c0 5 7 13 7 13s7-8 7-13c0-4-3-7-7-7z"/>
+        <circle cx="12" cy="9" r="2.5" stroke="#C8952A"/>
+      </svg>
+    </div>
+    <div>
+      <div style="font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);font-weight:700;margin-bottom:2px">PetroRecôncavo · Operações Especiais</div>
+      <h1 id="simTitle" onclick="titleClick()" style="cursor:default;font-size:16px;font-weight:700;color:var(--amber-text);letter-spacing:-.01em">Controle de Poço</h1>
+      <span id="wellSubtitle" style="font-size:11px;color:var(--muted)">Overbalance / Absorção — Múltiplas Zonas · Packer · BSW</span>
+    </div>
+  </div>
+  <div style="display:flex;align-items:center;gap:10px">
+    <button class="btn" onclick="resetAll()" style="border-color:var(--red);color:var(--red);font-size:12px"
+            title="Apaga todos os dados e reinicia o simulador">🗑 Limpar</button>
+    <div style="font-size:11px;color:var(--muted);text-align:right"><span id="ts">—</span></div>
+  </div>
+</header>
+
+<div class="tabs">
+  <button class="tbt on" id="t0" onclick="sw(0)">⚙ Configuração</button>
+  <button class="tbt" id="t1" onclick="sw(1)">📊 Monitoramento</button>
+  <button class="tbt" id="t2" onclick="sw(2)">📈 Gráficos</button>
+  <button class="tbt" id="t3" onclick="sw(3)">📱 WhatsApp</button>
+</div>
+
+<!-- ===== CONFIGURAÇÃO ===== -->
+<div id="p0">
+
+  <!-- SEÇÃO 1: DADOS DO POÇO -->
+  <div class="card card-highlight">
+    <p class="sec"><span class="sec-num">1</span>Dados do Poço</p>
+
+    <!-- Nome do Poço -->
+    <div class="fl" style="margin-bottom:12px">
+      <label style="font-size:12px;font-weight:600;color:var(--amber)">Nome do Poço</label>
+      <input type="text" id="w_wellName" placeholder="Ex: 9-FBN-001D-BA" oninput="updateWellName()"
+             style="font-size:15px;font-weight:600;letter-spacing:.02em">
+    </div>
+
+    <!-- LINHA 1: TVD + Tipo de Fluido + Densidade (não-BSW) -->
+    <div class="fg" style="margin-bottom:10px">
+      <div class="fl">
+        <label>TVD do Poço (m)</label>
+        <input type="number" id="c_td" value="" step="50" oninput="uci();updFt('c_td')">
+      </div>
+      <div class="fl">
+        <label>Tipo de Fluido do Poço</label>
+        <select id="w_fluidType" onchange="onFluidTypeChange()">
+          <option value="" selected disabled>— Selecionar —</option>
+          <option value="oleo">Óleo cru</option>
+          <option value="agua">Água</option>
+          <option value="salmoura">Salmoura</option>
+          <option value="mistura">Óleo + Água (BSW)</option>
+          <option value="lama">Lama de completação</option>
+          <option value="outro">Outro</option>
+        </select>
+      </div>
+      <div class="fl" id="fd_direct_box">
+        <label>Densidade do Fluido (ppg)</label>
+        <input type="number" id="c_fd" value="" step="0.1" oninput="uci()">
+        <p class="hint" id="fd_hint">1 ppg ≈ 0,052 psi/ft</p>
+      </div>
+      <div class="fl">
+        <label>Tipo de Operação</label>
+        <select id="c_optype" onchange="uci()">
+          <option value="equip">Equipagem (descendo coluna)</option>
+          <option value="desequip">Desequipagem (retirando coluna)</option>
+          <option value="monitor" selected>Monitoramento / Teste absorção</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- LINHA BSW: visível apenas para Óleo + Água -->
+    <div id="bsw_block" style="display:none;background:var(--card2);border-radius:8px;padding:10px 12px;margin-bottom:10px;border:0.5px solid var(--border)">
+      <p style="font-size:10px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--amber);margin-bottom:8px">Composição do Fluido — BSW</p>
+      <div class="fg" style="margin-bottom:0">
+        <div class="fl">
+          <label>Densidade do Óleo (ppg)</label>
+          <input type="number" id="w_rhoOil" value="6.8" step="0.1" min="4" max="10" oninput="uci()">
+          <p class="hint">Óleo do reservatório</p>
+        </div>
+        <div class="fl">
+          <label>Densidade da Água (ppg)</label>
+          <input type="number" id="w_rhoWater" value="8.4" step="0.05" min="8.0" max="10.5" oninput="uci()">
+          <p class="hint">Água de formação</p>
+        </div>
+        <div class="fl">
+          <label>BSW — % Água <span id="bsw_tip_wrap" class="tip-wrap" tabindex="0">ℹ<span id="bsw_tip_box" class="tip-box">Preencha os campos para ver o cálculo.</span></span></label>
+          <input type="number" id="w_bsw" value="" step="5" min="0" max="100" oninput="uci()">
+          <p class="hint">% água na mistura produzida</p>
+        </div>
+        <div class="fl">
+          <label>ρ Efetiva BSW (ppg)</label>
+          <input type="number" id="c_fd_bsw" value="" step="0.001" readonly
+                 style="border-color:var(--amber);color:var(--amber);background:var(--amber-bg)">
+          <p class="hint" id="fd_hint_bsw" style="color:var(--amber)">⚡ BSW×ρ_água + (1−BSW)×ρ_óleo</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- LINHA 2: Via de Medição + Nível Estático + OB Alvo -->
+    <div class="fg" style="margin-bottom:10px;max-width:900px">
+      <div class="fl">
+        <label>Via de Medição / Injeção</label>
+        <select id="c_path" onchange="uci()">
+          <option value="anular" selected>Anular</option>
+          <option value="coluna">Coluna</option>
+          <option value="ambos">Coluna + Anular (U-effect, sem packer)</option>
+        </select>
+        <p class="hint">U-effect ignora packer</p>
+      </div>
+      <div class="fl">
+        <label>Nível Estático h₀ (m) <span class="m2ft" id="c_ne_ft"></span></label>
+        <input type="number" id="c_ne" value="" step="10" oninput="syncNE();updFt('c_ne')"
+               style="border-color:var(--amber);border-width:1.5px">
+        <p class="hint" style="color:var(--amber)">⚡ Topo do fluido — sincroniza com Seção 4</p>
+      </div>
+      <div class="fl">
+        <label>Overbalance Alvo para Teste (psi)</label>
+        <input type="number" id="c_ot" value="" step="25" oninput="uci()"
+               style="border-color:var(--amber);border-width:1.5px">
+        <p class="hint">ΔP acima da pressão do reservatório</p>
+      </div>
+    </div>
+
+    <!-- ZONAS DE FORMAÇÃO (dentro do card Dados do Poço) -->
+    <hr style="margin:14px 0 12px">
+    <p class="sec" style="margin-bottom:10px">Zonas de Formação</p>
+    <div id="zone_list"></div>
+    <div class="add-btn" onclick="addZone()">+ Adicionar zona</div>
+  </div>
+
+  <!-- SEÇÃO 2: REVESTIMENTO -->
+  <div class="card">
+    <p class="sec"><span class="sec-num">2</span>Revestimento — Seções (da superfície para o fundo)</p>
+    <div id="casing_list"></div>
+    <div class="add-btn" onclick="addCasing()">+ Adicionar seção de revestimento</div>
+  </div>
+
+  <!-- SEÇÃO 3: COLUNA -->
+  <div class="card">
+    <p class="sec"><span class="sec-num">3</span>Coluna — Configuração</p>
+    <div class="fg" style="max-width:400px;margin-bottom:8px">
+      <div class="fl">
+        <label>Condição do Poço</label>
+        <select id="c_colmode" onchange="setColumnMode(this.value)">
+          <option value="" selected disabled>— Selecionar —</option>
+          <option value="desequipado">Poço Desequipado (sem coluna)</option>
+          <option value="equipado">Poço Equipado (com coluna)</option>
+        </select>
+        <p class="hint">Comp. unitário = Comp. Total / Quantidade (média automática)</p>
+      </div>
+    </div>
+    <div id="column_list"></div>
+    <div class="add-btn" id="col_add_btn" onclick="addColumnSection()">+ Adicionar seção de coluna</div>
+  </div>
+
+  <!-- SEÇÃO 4: TESTE DE ABSORÇÃO -->
+  <div class="card card-highlight">
+    <p class="sec"><span class="sec-num">4</span>Teste de Absorção</p>
+    <label class="chk-label"><input type="checkbox" id="c_dry" onchange="tgl()"> Poço seco — sem fluido</label>
+    <div id="initrow" class="fg">
+      <div class="fl">
+        <label>Nível Estático h₀ (m) — sincronizado de Dados do Poço</label>
+        <input type="number" id="c_is" value="" step="10" readonly
+               style="border-color:var(--amber);color:var(--amber);background:var(--amber-bg)">
+        <p class="hint" style="color:var(--amber)">⚡ Edite em Dados do Poço para alterar</p>
+      </div>
+      <div class="fl">
+        <label>Fluido já presente no poço (bbl)</label>
+        <input type="number" id="c_ib" value="" step="1">
+      </div>
+      <div class="fl">
+        <label>Intervalo entre Leituras</label>
+        <select id="c_interval">
+          <option value="5">5 min</option><option value="10">10 min</option><option value="15">15 min</option>
+          <option value="20">20 min</option><option value="30">30 min</option><option value="45">45 min</option>
+          <option value="60" selected>1 hora</option><option value="90">1h 30min</option>
+          <option value="120">2 horas</option><option value="180">3 horas</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Resultados calculados do teste -->
+    <div id="testResults"></div>
+
+    <div class="btn-row" style="margin-top:12px">
+      <button class="btn pr" onclick="ini()">Iniciar Simulação →</button>
+    </div>
+  </div>
+
+  <!-- SEÇÃO 5: CAPACIDADES (RESUMO AUTO) -->
+  <div class="card">
+    <p class="sec"><span class="sec-num">5</span>Capacidades — Resumo Calculado</p>
+    <div style="overflow-x:auto"><div id="capSummary"></div></div>
+  </div>
+</div>
+
+<!-- ===== MONITORAMENTO ===== -->
+<div id="p1" style="display:none">
+  <div id="cards" class="card"></div>
+
+  <div id="zone_status" style="display:none" class="card">
+    <p class="sec">Status por Zona de Formação</p>
+    <div id="zone_cards"></div>
+  </div>
+
+  <div id="int_bar" style="display:none" class="info-bar">
+    <span>⏱ Intervalo: <strong id="int_lbl">—</strong></span>
+    <span>Via: <strong id="int_path">—</strong></span>
+    <span>Operação: <strong id="int_optype">—</strong></span>
+    <span>Próximo: <strong id="int_next">—</strong></span>
+    <span>Decorrido: <strong id="int_total">—</strong></span>
+  </div>
+
+  <!-- RESULTADO FINAL: Taxa de Absorção + Overbalance Proposto -->
+  <div id="finalResults" style="display:none" class="card">
+    <p class="sec">Resultado — Taxa de Absorção × Overbalance Proposto</p>
+    <div id="finalResultsContent"></div>
+  </div>
+
+  <!-- BANNER H0→H1: Volume inicial a injetar -->
+  <div id="h1_banner" style="display:none"></div>
+
+  <div class="card">
+    <p class="sec" id="hlbl">Registrar Leitura Atual — T+0h00</p>
+    <div class="fg" style="max-width:560px">
+      <div class="fl">
+        <label>Profundidade Sonolog (m) <span class="m2ft" id="n_sl_ft"></span></label>
+        <input type="number" id="n_sl" step="3" placeholder="Ex: 381" oninput="updFt('n_sl')">
+        <p class="hint">A partir de H2: leitura manual do Sonolog. H0 (NE) e H1 (meta OB) são automáticos.</p>
+      </div>
+      <div class="fl">
+        <label id="lbl_bbl">Barris Injetados (desde última leitura)</label>
+        <input type="number" id="n_bbl" value="0" step="0.5">
+      </div>
+    </div>
+    <div class="btn-row">
+      <button class="btn pr" onclick="add()">+ Adicionar Leitura</button>
+      <button class="btn" onclick="undo()">↩ Desfazer última</button>
+      <button class="btn xl" id="btn_export" onclick="exportExcel()">📥 Exportar Excel</button>
+      <button class="btn pdf" id="btn_pdf" onclick="exportPDF(false)">📄 Exportar PDF</button>
+    </div>
+  </div>
+
+  <div id="recb" style="display:none">
+    <div id="rec-box-injetar" class="rec-box" style="display:none">
+      <p class="sec" id="rec_title_inj">Recomendação — Injetar para atingir janela</p>
+      <div style="display:flex;align-items:baseline;gap:8px">
+        <span class="rec-v" id="rec_v">—</span>
+        <span style="font-size:14px;color:var(--muted)">barris a injetar</span>
+      </div>
+      <p class="rec-d" id="rec_d">—</p>
+    </div>
+    <div id="rec-box-manter" style="display:none;background:linear-gradient(135deg,var(--green-bg) 0%,var(--card) 100%);border:1px solid rgba(15,110,86,.3);border-radius:12px;padding:16px;margin:14px 0">
+      <p class="sec" style="color:var(--green-text)">✓ Dentro da Janela Operacional — Manter Posição</p>
+      <div style="display:flex;align-items:baseline;gap:8px">
+        <span style="font-size:36px;font-weight:700;font-family:'SF Mono',monospace;color:var(--green)" id="rec_v_manter">—</span>
+        <span style="font-size:14px;color:var(--muted)">barris para compensar absorção</span>
+      </div>
+      <p class="rec-d" id="rec_d_manter" style="color:var(--green-text)">—</p>
+    </div>
+    <div id="rec-box-aguardar" style="display:none;background:linear-gradient(135deg,var(--amber-bg) 0%,var(--card) 100%);border:1px solid rgba(45,106,79,.4);border-radius:12px;padding:16px;margin:14px 0">
+      <p class="sec" style="color:var(--amber-text)">⚠ Sobrepressão — Suspender Injeção / Aguardar</p>
+      <div style="display:flex;align-items:center;gap:12px;margin:8px 0">
+        <span style="font-size:32px">🛑</span>
+        <div>
+          <p style="font-size:14px;font-weight:700;color:var(--amber-text)" id="rec_v_aguardar">—</p>
+          <p style="font-size:11px;color:var(--muted)" id="rec_d_aguardar">—</p>
+        </div>
+      </div>
+    </div>
+    <div id="proj_panel" style="display:none" class="abs-proj">
+      <p class="lbl">Projeção de absorção</p>
+      <p class="val" id="proj_v">—</p>
+      <p style="font-size:11px;color:var(--muted);margin-top:4px" id="proj_d">—</p>
+    </div>
+    <div id="pr_ne_panel" style="display:none" class="abs-proj">
+      <p class="lbl">Pr Reservatório — pelo Nível Estático h₀</p>
+    </div>
+  </div>
+
+  <div class="card">
+    <p class="sec">Registro de Leituras</p>
+    <div class="tbl-wrap">
+      <table>
+        <thead id="thead_main"><tr><th>—</th></tr></thead>
+        <tbody id="tbl">
+          <tr><td colspan="13" style="text-align:center;color:var(--muted);padding:16px;font-family:sans-serif">Configure e inicie a simulação.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ===== WHATSAPP ===== -->
+<div id="p3" style="display:none">
+  <div style="display:flex;flex-direction:column;align-items:center;gap:12px;padding:4px 0 20px">
+
+    <!-- Aviso de instrução -->
+    <div style="width:100%;max-width:440px;background:#f0f7f2;border-left:3px solid #2D6A4F;border-radius:0 8px 8px 0;padding:10px 14px;font-size:12px;color:#2D6A4F">
+      <strong>Como usar:</strong> Preencha os dados, clique em <strong>Iniciar Simulação →</strong> (aba ⚙ Configuração) e adicione pelo menos uma leitura (aba 📊 Monitoramento). Depois volte aqui e clique <strong>↺ Atualizar</strong>.
+    </div>
+
+    <!-- Botões utilitários -->
+    <div style="display:flex;gap:8px;width:100%;max-width:440px;justify-content:flex-end">
+      <button class="btn" id="btn_wpp_refresh" onclick="renderWhatsApp()" style="font-size:12px;border-color:#2D6A4F;color:#2D6A4F">↺ Atualizar</button>
+      <button class="btn" id="btn_wpp_copy" onclick="copyWppCard()" style="font-size:12px;background:#2D6A4F;border-color:#2D6A4F;color:white">📋 Copiar Texto WhatsApp</button>
+    </div>
+
+    <!-- Status de dados -->
+    <div id="wpp_data_status" style="width:100%;max-width:440px;font-size:11px;color:var(--muted);text-align:center"></div>
+
+    <!-- Card para print — paleta PetroRecôncavo -->
+    <div id="wpp_card" style="
+      width:440px;max-width:100%;
+      background:#ffffff;
+      border-radius:14px;
+      overflow:hidden;
+      box-shadow:0 8px 40px rgba(0,0,0,.15);
+      font-family:-apple-system,'Segoe UI',system-ui,sans-serif;
+      color:#1a1a18;
+    ">
+
+      <!-- Faixa dourada topo (marca PetroRecôncavo) -->
+      <div style="height:4px;background:linear-gradient(90deg,#C8952A 0%,#E8B84B 50%,#C8952A 100%)"></div>
+
+      <!-- Header verde escuro -->
+      <div id="wpp_header" style="background:#1B4D2E;padding:16px 20px 14px">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px">
+          <div style="flex:1;min-width:0">
+            <div style="font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:rgba(255,255,255,.5);font-weight:700;margin-bottom:5px">PetroRecôncavo · Operações Especiais</div>
+            <div id="wpp_wellname" style="font-size:19px;font-weight:700;color:#ffffff;letter-spacing:.01em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Aguardando dados…</div>
+          </div>
+          <div id="wpp_status_badge" style="padding:5px 12px;border-radius:999px;font-size:10px;font-weight:700;letter-spacing:.07em;white-space:nowrap;flex-shrink:0;margin-top:2px;background:#4CAF50;color:white">—</div>
+        </div>
+        <div style="display:flex;gap:14px;margin-top:11px;flex-wrap:wrap">
+          <div style="font-size:10px;color:rgba(255,255,255,.55)">⏱ <span id="wpp_datetime" style="color:rgba(255,255,255,.82)">—</span></div>
+          <div style="font-size:10px;color:rgba(255,255,255,.55)">🛢 <span id="wpp_op" style="color:rgba(255,255,255,.82)">—</span></div>
+          <div style="font-size:10px;color:rgba(255,255,255,.55)">📡 <span id="wpp_via" style="color:rgba(255,255,255,.82)">—</span></div>
+          <div style="font-size:10px;color:rgba(255,255,255,.55)">TVD: <span id="wpp_tvd" style="color:rgba(255,255,255,.82)">—</span></div>
+        </div>
+      </div>
+
+      <!-- Métricas principais 2×2 — gap verde -->
+      <div id="wpp_metrics" style="display:grid;grid-template-columns:1fr 1fr;gap:1px;background:#2D6A4F">
+        <!-- preenchido por JS -->
+        <div style="grid-column:1/-1;background:#f5fbf7;padding:22px;text-align:center;color:#5a9070;font-size:12px">
+          ⬆ Inicie a simulação e adicione leituras para ver o resumo aqui.
+        </div>
+      </div>
+
+      <!-- Pressão por zona -->
+      <div id="wpp_pressure" style="background:#f5fbf7;padding:12px 18px;border-top:1px solid #d4ead9"></div>
+
+      <!-- Leituras recentes -->
+      <div id="wpp_readings" style="padding:0 18px 14px;background:#fff"></div>
+
+      <!-- Recomendação -->
+      <div id="wpp_rec" style="padding:0 18px 18px;background:#fff"></div>
+
+      <!-- Rodapé verde claro -->
+      <div style="background:#EBF5EE;padding:9px 18px;display:flex;justify-content:space-between;align-items:center;border-top:1px solid #c8e6cf">
+        <div style="font-size:9px;color:#5a8a6a;font-weight:600">Controle de Poço · PetroRecôncavo</div>
+        <div id="wpp_footer_time" style="font-size:9px;color:#5a8a6a">—</div>
+      </div>
+
+    </div><!-- /wpp_card -->
+
+    <p style="font-size:11px;color:var(--muted);text-align:center;max-width:440px;line-height:1.7">
+      📸 Print da tela (Alt+PrtSc ou Snipping Tool) → envie no grupo.<br>
+      Ou use <strong>📋 Copiar Texto WhatsApp</strong> para colar direto no chat.
+    </p>
+  </div>
+</div>
+
+<!-- ===== GRÁFICOS ===== -->
+<div id="p2" style="display:none">
+  <!-- JANELA OPERACIONAL — chart novo -->
+  <div class="card card-highlight">
+    <p class="sec"><span class="sec-num">✦</span>Janela Operacional — Nível Sonolog × Tempo</p>
+    <div id="leg_jo" class="legend-row"></div>
+    <div style="position:relative;width:100%;height:360px;margin-bottom:4px"><canvas id="ch_jo"></canvas></div>
+    <div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:4px">
+      <span style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--muted)"><span style="display:inline-block;width:14px;height:14px;border-radius:3px;background:rgba(163,45,45,.18);border:1.5px solid rgba(163,45,45,.5)"></span>Zona de Colapso (ΔP &lt; 0 — underbalance)</span>
+      <span style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--muted)"><span style="display:inline-block;width:14px;height:14px;border-radius:3px;background:rgba(15,110,86,.15);border:1.5px solid rgba(15,110,86,.5)"></span>Janela Operacional (0 … +OB alvo)</span>
+      <span style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--muted)"><span style="display:inline-block;width:14px;height:14px;border-radius:3px;background:rgba(45,106,79,.18);border:1.5px solid rgba(45,106,79,.5)"></span>Zona de Sobrepressão (ΔP &gt; OB alvo)</span>
+    </div>
+    <p style="font-size:10px;color:var(--hint);margin-top:6px">Eixo Y = ΔP em PSI (Ph aplicada − Pr zona crítica). Eixo X = leitura por intervalo com o ΔP daquela hora. <strong>Janela operacional</strong> = 50% do OB alvo até o OB alvo (ex.: 75–150 psi para alvo 150 psi). Abaixo do mínimo: risco de influxo. Acima: risco de perda de circulação/dano à formação.</p>
+  </div>
+  <div class="card">
+    <p class="sec">Nível de Fluido (Sonolog)</p>
+    <div id="leg_l" class="legend-row"></div>
+    <div id="proj_banner" class="proj-banner" style="display:none"></div>
+    <div class="cw"><canvas id="ch_l"></canvas></div>
+    <p style="font-size:10px;color:var(--hint);text-align:center">metros — eixo invertido</p>
+  </div>
+  <div class="card">
+    <p class="sec">Pressão Hidrostática × Zonas × Alvo</p>
+    <div id="leg_p" class="legend-row"></div>
+    <div class="cw"><canvas id="ch_p"></canvas></div>
+  </div>
+  <div class="card">
+    <p class="sec">PSI × Volume do Poço — Janela Operacional</p>
+    <div id="leg_pv" class="legend-row"></div>
+    <div class="cw"><canvas id="ch_pv"></canvas></div>
+    <p style="font-size:10px;color:var(--hint);text-align:center">Faixa sombreada = janela operacional (Pr até Pr+OB)</p>
+  </div>
+  <div class="card">
+    <p class="sec">Absorção por Intervalo (bbl/h)</p>
+    <div id="leg_a" class="legend-row"></div>
+    <div class="cw2"><canvas id="ch_a"></canvas></div>
+  </div>
+  <div class="card">
+    <p class="sec">Barris Injetados vs. Absorção Acumulada</p>
+    <div id="leg_c" class="legend-row"></div>
+    <div class="cw"><canvas id="ch_c"></canvas></div>
+  </div>
+</div>
+
+<script>
+/* =====================================================
+   STATE
+   ===================================================== */
+var cfg=null, rds=[], CH={};
+var casingSections=[];
+var formZones=[];
+var nextCasingId=1, nextZoneId=1;
+
+/* =====================================================
+   CATÁLOGO DE REVESTIMENTO API (OD × Peso → ID auto)
+   ===================================================== */
+var CASING_CATALOG=[
+  // 4-1/2" (114,3mm)
+  {od:4.5,  odLbl:'4 1/2"', w:9.5,  id:4.090, drift:3.965, grades:['J-55','K-55']},
+  {od:4.5,  odLbl:'4 1/2"', w:10.5, id:4.052, drift:3.927, grades:['J-55','K-55']},
+  {od:4.5,  odLbl:'4 1/2"', w:11.6, id:4.000, drift:3.875, grades:['J-55','C-75','L-80','N-80','C-90','C-95','P-110']},
+  {od:4.5,  odLbl:'4 1/2"', w:12.6, id:3.958, drift:3.833, grades:['J-55','C-75','L-80','N-80','C-90','C-95','P-110']},
+  {od:4.5,  odLbl:'4 1/2"', w:13.5, id:3.920, drift:3.795, grades:['C-75','L-80','N-80','C-90','C-95','P-110']},
+  // 5" (127mm)
+  {od:5.0,  odLbl:'5"',     w:11.5, id:4.650, drift:4.525, grades:['J-55','K-55','N-80','P-110']},
+  {od:5.0,  odLbl:'5"',     w:13.0, id:4.494, drift:4.369, grades:['J-55','N-80','P-110']},
+  {od:5.0,  odLbl:'5"',     w:15.0, id:4.408, drift:4.283, grades:['J-55','N-80','P-110']},
+  {od:5.0,  odLbl:'5"',     w:18.0, id:4.276, drift:4.151, grades:['J-55','N-80','P-110']},
+  {od:5.0,  odLbl:'5"',     w:20.3, id:4.174, drift:4.059, grades:['J-55','N-80','P-110']},
+  {od:5.0,  odLbl:'5"',     w:21.4, id:4.126, drift:4.001, grades:['N-80','P-110']},
+  {od:5.0,  odLbl:'5"',     w:23.2, id:4.044, drift:3.919, grades:['N-80','P-110']},
+  // 5-1/2" (139,7mm)
+  {od:5.5,  odLbl:'5 1/2"', w:14.0, id:5.012, drift:4.887, grades:['J-55','K-55','N-80','P-110']},
+  {od:5.5,  odLbl:'5 1/2"', w:15.5, id:4.950, drift:4.825, grades:['J-55','K-55','N-80','P-110']},
+  {od:5.5,  odLbl:'5 1/2"', w:17.0, id:4.892, drift:4.767, grades:['J-55','N-80','P-110']},
+  {od:5.5,  odLbl:'5 1/2"', w:20.0, id:4.778, drift:4.653, grades:['J-55','N-80','P-110']},
+  {od:5.5,  odLbl:'5 1/2"', w:23.0, id:4.670, drift:4.545, grades:['J-55','N-80','P-110']},
+  // 7" (177,8mm)
+  {od:7.0,  odLbl:'7"',     w:17.0, id:6.538, drift:6.413, grades:['J-55','K-55','N-80','P-110']},
+  {od:7.0,  odLbl:'7"',     w:20.0, id:6.456, drift:6.331, grades:['J-55','K-55','N-80','P-110']},
+  {od:7.0,  odLbl:'7"',     w:23.0, id:6.366, drift:6.241, grades:['J-55','K-55','N-80','P-110']},
+  {od:7.0,  odLbl:'7"',     w:26.0, id:6.276, drift:6.151, grades:['N-80','P-110','Q-125']},
+  {od:7.0,  odLbl:'7"',     w:29.0, id:6.184, drift:6.059, grades:['N-80','P-110','Q-125']},
+  {od:7.0,  odLbl:'7"',     w:32.0, id:6.094, drift:5.969, grades:['N-80','P-110','Q-125']},
+  {od:7.0,  odLbl:'7"',     w:35.0, id:6.004, drift:5.879, grades:['N-80','P-110','Q-125']},
+  {od:7.0,  odLbl:'7"',     w:38.0, id:5.920, drift:5.795, grades:['P-110','Q-125']},
+  // 7-5/8" (193,7mm)
+  {od:7.625,odLbl:'7 5/8"', w:24.0, id:7.025, drift:6.900, grades:['J-55','K-55','N-80','P-110']},
+  {od:7.625,odLbl:'7 5/8"', w:26.4, id:6.969, drift:6.844, grades:['J-55','K-55','N-80','P-110']},
+  {od:7.625,odLbl:'7 5/8"', w:29.7, id:6.875, drift:6.750, grades:['N-80','P-110']},
+  {od:7.625,odLbl:'7 5/8"', w:33.7, id:6.765, drift:6.640, grades:['N-80','P-110','Q-125']},
+  {od:7.625,odLbl:'7 5/8"', w:39.0, id:6.625, drift:6.500, grades:['N-80','P-110','Q-125']},
+  {od:7.625,odLbl:'7 5/8"', w:42.8, id:6.501, drift:6.376, grades:['P-110','Q-125']},
+  {od:7.625,odLbl:'7 5/8"', w:45.3, id:6.435, drift:6.310, grades:['P-110','Q-125']},
+  // 8-5/8" (219,1mm)
+  {od:8.625,odLbl:'8 5/8"', w:24.0, id:8.097, drift:7.972, grades:['J-55','K-55','N-80']},
+  {od:8.625,odLbl:'8 5/8"', w:28.0, id:8.017, drift:7.892, grades:['J-55','K-55','N-80']},
+  {od:8.625,odLbl:'8 5/8"', w:32.0, id:7.921, drift:7.796, grades:['J-55','K-55','N-80','P-110']},
+  {od:8.625,odLbl:'8 5/8"', w:36.0, id:7.825, drift:7.700, grades:['N-80','P-110']},
+  {od:8.625,odLbl:'8 5/8"', w:40.0, id:7.725, drift:7.600, grades:['N-80','P-110']},
+  {od:8.625,odLbl:'8 5/8"', w:44.0, id:7.625, drift:7.500, grades:['N-80','P-110']},
+  // 9-5/8" (244,5mm)
+  {od:9.625,odLbl:'9 5/8"', w:32.3, id:9.001, drift:8.845, grades:['J-55','K-55','N-80']},
+  {od:9.625,odLbl:'9 5/8"', w:36.0, id:8.921, drift:8.765, grades:['K-55','N-80','P-110']},
+  {od:9.625,odLbl:'9 5/8"', w:40.0, id:8.835, drift:8.679, grades:['K-55','N-80','P-110']},
+  {od:9.625,odLbl:'9 5/8"', w:43.5, id:8.755, drift:8.599, grades:['N-80','P-110']},
+  {od:9.625,odLbl:'9 5/8"', w:47.0, id:8.681, drift:8.525, grades:['N-80','P-110','Q-125']},
+  {od:9.625,odLbl:'9 5/8"', w:53.5, id:8.535, drift:8.379, grades:['N-80','P-110','Q-125']},
+  // 10-3/4" (273,1mm)
+  {od:10.75,odLbl:'10 3/4"',w:32.75,id:10.192,drift:10.036,grades:['J-55','K-55','N-80']},
+  {od:10.75,odLbl:'10 3/4"',w:40.5, id:10.050,drift:9.894, grades:['K-55','N-80','P-110']},
+  {od:10.75,odLbl:'10 3/4"',w:45.5, id:9.950, drift:9.794, grades:['N-80','P-110']},
+  {od:10.75,odLbl:'10 3/4"',w:51.0, id:9.850, drift:9.694, grades:['N-80','P-110']},
+  {od:10.75,odLbl:'10 3/4"',w:55.5, id:9.760, drift:9.604, grades:['N-80','P-110']},
+  // 13-3/8" (339,7mm)
+  {od:13.375,odLbl:'13 3/8"',w:48.0, id:12.715,drift:12.559,grades:['K-55','N-80']},
+  {od:13.375,odLbl:'13 3/8"',w:54.5, id:12.615,drift:12.459,grades:['K-55','N-80']},
+  {od:13.375,odLbl:'13 3/8"',w:61.0, id:12.515,drift:12.359,grades:['K-55','N-80','P-110']},
+  {od:13.375,odLbl:'13 3/8"',w:68.0, id:12.415,drift:12.259,grades:['K-55','N-80','P-110']},
+  {od:13.375,odLbl:'13 3/8"',w:72.0, id:12.347,drift:12.191,grades:['N-80','P-110']},
+  {od:13.375,odLbl:'13 3/8"',w:77.0, id:12.275,drift:12.119,grades:['N-80','P-110']},
+];
+
+/* Grades padrão por tipo de tubulação */
+var TUBING_GRADES_MAP={
+  1.050:['H-40','J-55','C-75','N-80'],
+  1.315:['H-40','J-55','C-75','N-80'],
+  1.660:['H-40','J-55','C-75','N-80'],
+  1.900:['H-40','J-55','C-75','N-80'],
+  2.375:['H-40','J-55','C-75','N-80'],
+  2.875:['H-40','J-55','C-75','N-80'],
+  3.500:['H-40','J-55','C-75','N-80','P-105'],
+  4.000:['H-40','J-55','C-75','N-80'],
+  4.500:['H-40','J-55','C-75','N-80']
+};
+
+
+/* Densidades padrão por tipo de fluido (ppg) — só sugestão/hint */
+var FLUID_PRESETS={
+  oleo:{rho:7.1, label:'Óleo cru médio'},
+  agua:{rho:8.33, label:'Água doce'},
+  salmoura:{rho:9.0, label:'Salmoura típica Bahia'},
+  mistura:{rho:null, label:'Calcular por BSW'},
+  lama:{rho:9.5, label:'Lama de completação'},
+  outro:{rho:null, label:'Definir manualmente'}
+};
+
+/* Catálogo API: Tubos de Produção (SPEC-5C1) */
+var TUBING_CATALOG=[
+  {od:1.050, weight:"1,14 / 1,20", id:0.824},
+  {od:1.315, weight:"1,70 / 1,80", id:1.049},
+  {od:1.660, weight:"2,30 / 2,40", id:1.380},
+  {od:1.900, weight:"2,75 / 2,90", id:1.610},
+  {od:2.375, weight:"4,0",         id:2.041},
+  {od:2.375, weight:"4,6 / 4,7",   id:1.995},
+  {od:2.375, weight:"5,8 / 5,95",  id:1.867},
+  {od:2.875, weight:"6,4 / 6,5",   id:2.441},
+  {od:2.875, weight:"7,8 / 7,9",   id:2.323},
+  {od:2.875, weight:"8,6 / 8,7",   id:2.259},
+  {od:3.500, weight:"7,7",         id:3.068},
+  {od:3.500, weight:"9,2 / 9,3",   id:2.992},
+  {od:3.500, weight:"10,2",        id:2.992},
+  {od:3.500, weight:"12,7 / 12,95",id:2.750},
+  {od:4.000, weight:"9,5",         id:3.548},
+  {od:4.000, weight:"11",          id:3.476},
+  {od:4.500, weight:"12,6 / 12,75",id:3.958}
+];
+function tubingLabel(od){
+  var frac={1.050:"1,05\"",1.315:"1,315\"",1.660:"1,660\"",1.900:"1,900\"",
+    2.375:"2 3/8\"",2.875:"2 7/8\"",3.500:"3 1/2\"",4.000:"4\"",4.500:"4 1/2\""};
+  return frac[od]||(od+"\"");
+}
+var COLLAR_IDS={
+  3.375:[1.25,1.75], 3.500:[1.50,1.75], 3.750:[1.50,1.75],
+  3.875:[1.50,1.75,2.00,2.25], 4.000:[1.50,1.75,2.00,2.25],
+  4.125:[1.50,1.75,2.00,2.25], 4.250:[1.50,1.75,2.00,2.25],
+  4.500:[1.50,1.75,2.00,2.25], 4.750:[1.50,1.75,2.00,2.25,2.50],
+  5.000:[1.50,1.75,2.00,2.25,2.50], 5.250:[1.50,1.75,2.00,2.25,2.50,2.8125],
+  5.500:[1.50,1.75,2.00,2.25,2.50,2.8125,3.00], 5.750:[1.50,1.75,2.00,2.25,2.50,2.8125,3.00],
+  6.000:[1.50,1.75,2.00,2.25,2.50,2.8125,3.00,3.25,3.50],
+  6.250:[1.50,1.75,2.00,2.25,2.50,2.8125,3.00,3.25,3.50],
+  6.500:[1.50,1.75,2.00,2.25,2.50,2.8125,3.00,3.25,3.50],
+  6.750:[1.50,1.75,2.00,2.25,2.50,2.8125,3.00,3.25,3.50]
+};
+function collarLabel(od){
+  var frac={3.375:"3 3/8\"",3.500:"3 1/2\"",3.750:"3 3/4\"",3.875:"3 7/8\"",
+    4.000:"4\"",4.125:"4 1/8\"",4.250:"4 1/4\"",4.500:"4 1/2\"",4.750:"4 3/4\"",
+    5.000:"5\"",5.250:"5 1/4\"",5.500:"5 1/2\"",5.750:"5 3/4\"",
+    6.000:"6\"",6.250:"6 1/4\"",6.500:"6 1/2\"",6.750:"6 3/4\""};
+  return frac[od]||(od+"\"");
+}
+function idLabel(id){
+  var frac={1.25:"1 1/4\"",1.50:"1 1/2\"",1.75:"1 3/4\"",2.00:"2\"",
+    2.25:"2 1/4\"",2.50:"2 1/2\"",2.8125:"2 13/16\"",
+    3.00:"3\"",3.25:"3 1/4\"",3.50:"3 1/2\""};
+  return frac[id]||(id.toFixed(3)+"\"");
+}
+
+/* Catálogo Duoline 20 FV e 10 PE */
+var DUOLINE_CATALOG=[
+  {od:2.375, weight:"4,7 lb/pé (20 FV)",  id:1.810, liner:"1,81\" (FV)",  drift:1.50,  cap:0.010441, tipo:"20 FV"},
+  {od:2.875, weight:"6,5 lb/pé (20 FV)",  id:2.251, liner:"2,251\" (FV)", drift:1.945, cap:0.016149, tipo:"20 FV"},
+  {od:3.500, weight:"9,3 lb/pé (20 FV)",  id:2.750, liner:"2,75\" (FV)",  drift:2.375, cap:0.024102, tipo:"20 FV"},
+  {od:2.875, weight:"6,5 lb/pé (10 PE)",  id:2.080, liner:"2,08\" (PEAD)", drift:1.875, cap:0.013788, tipo:"10 PE"},
+  {od:3.500, weight:"9,3 lb/pé (10 PE)",  id:2.600, liner:"2,60\" (PEAD)", drift:2.375, cap:0.021544, tipo:"10 PE"}
+];
+function duolineLabel(od,tipo){
+  var frac={2.375:"2 3/8\"",2.875:"2 7/8\"",3.500:"3 1/2\""};
+  return (frac[od]||od+"\"")+" Duoline "+tipo;
+}
+
+/* Catálogo Hastes de Bombeio (API SPEC 11 BR) */
+var RODS_CATALOG=[
+  {diam:0.625, weight:1.14, od_luva:1.500, torq:242, trac:36000,  label:"5/8\"  (0,625\")"},
+  {diam:0.750, weight:1.62, od_luva:1.625, torq:385, trac:63000,  label:"3/4\"  (0,750\")"},
+  {diam:0.875, weight:2.18, od_luva:1.812, torq:572, trac:72000,  label:"7/8\"  (0,875\")"},
+  {diam:1.000, weight:2.88, od_luva:2.188, torq:880, trac:94000,  label:"1\"    (1,000\")"},
+  {diam:1.125, weight:3.67, od_luva:0,     torq:0,   trac:0,      label:"1 1/8\" (1,125\")"}
+];
+/* Catálogo Revestimento (casing) — para referência na coluna */
+var CASING_CAT_COL=[
+  {od:4.500,  id:3.958, weight:"9,5",  label:"4 1/2\"  9,5 lb/pé"},
+  {od:5.000,  id:4.408, weight:"11,5", label:"5\"       11,5 lb/pé"},
+  {od:5.500,  id:4.778, weight:"14",   label:"5 1/2\"  14 lb/pé"},
+  {od:6.625,  id:6.049, weight:"17",   label:"6 5/8\"  17 lb/pé"},
+  {od:7.000,  id:6.094, weight:"23",   label:"7\"       23 lb/pé"},
+  {od:7.625,  id:6.765, weight:"24",   label:"7 5/8\"  24 lb/pé"},
+  {od:8.625,  id:7.921, weight:"24",   label:"8 5/8\"  24 lb/pé"},
+  {od:9.625,  id:8.835, weight:"32",   label:"9 5/8\"  32 lb/pé"},
+  {od:10.750, id:10.050,weight:"32,75",label:"10 3/4\" 32,75 lb/pé"},
+  {od:13.375, id:12.415,weight:"48",   label:"13 3/8\" 48 lb/pé"}
+];
+
+/* Auto-set PPG padrão ao trocar tipo de fluido */
+function onFluidTypeChange(){
+  var ft=document.getElementById('w_fluidType').value;
+  var fdEl=document.getElementById('c_fd');
+  var bswBlock=document.getElementById('bsw_block');
+  var fdDirectBox=document.getElementById('fd_direct_box');
+  if(ft==='mistura'){
+    if(bswBlock)bswBlock.style.display='';
+    if(fdDirectBox)fdDirectBox.style.display='none';
+  }else{
+    if(bswBlock)bswBlock.style.display='none';
+    if(fdDirectBox)fdDirectBox.style.display='';
+    if(FLUID_PRESETS[ft]&&FLUID_PRESETS[ft].rho){
+      fdEl.readOnly=false;
+      fdEl.value=FLUID_PRESETS[ft].rho.toFixed(2);
+    }
+  }
+  uci();
+}
+var columnSections=[];
+var nextColId=1;
+
+setInterval(function(){
+  var n=new Date();
+  var el=document.getElementById('ts');
+  if(el)el.textContent=n.toLocaleDateString('pt-BR')+' '+n.toLocaleTimeString('pt-BR');
+},1000);
+
+function updateWellName(){
+  var name=(document.getElementById('w_wellName')||{}).value||'';
+  var sub=document.getElementById('wellSubtitle');
+  if(sub){
+    if(name.trim()){
+      sub.textContent='Poço: '+name.trim()+'  —  Overbalance / Absorção · Múltiplas Zonas';
+      sub.style.color='var(--amber)';
+      sub.style.fontWeight='500';
+    }else{
+      sub.textContent='Overbalance / Absorção — Múltiplas Zonas · BSW';
+      sub.style.color='';
+      sub.style.fontWeight='';
+    }
+  }
+}
+
+function sw(i){
+  [0,1,2,3].forEach(function(j){
+    document.getElementById('t'+j).className='tbt'+(j===i?' on':'');
+    document.getElementById('p'+j).style.display=j===i?'block':'none';
+  });
+  if(i===2&&rds.length>=1)uch();
+  if(i===3)renderWhatsApp();
+}
+function updFt(id){ /* ft display removido */ }
+updFt('c_td');updFt('c_ne');
+
+function tglPacker(){
+  // Packer removido da UI — no-op mantido por compatibilidade
+  uci();
+}
+
+/* =====================================================
+   5-CLICK EASTER EGG — Fórmulas de referência
+   ===================================================== */
+var _titleClicks=0, _titleTimer=null;
+function titleClick(){
+  _titleClicks++;
+  clearTimeout(_titleTimer);
+  _titleTimer=setTimeout(function(){_titleClicks=0;},1800);
+  if(_titleClicks>=5){
+    _titleClicks=0;
+    document.getElementById('formulaModal').style.display='block';
+  }
+}
+function closeFormulas(){document.getElementById('formulaModal').style.display='none';}
+
+
+function tipWrap(formula){
+  return '<span class="tip-wrap" tabindex="0">ℹ<span class="tip-box">'+formula+'</span></span>';
+}
+
+/* =====================================================
+   WELL DATA GETTERS
+   ===================================================== */
+function getWellData(){
+  var hasPkrEl=document.getElementById('w_hasPacker');
+  var hasPacker=hasPkrEl?hasPkrEl.value==='sim':false;
+  var pkrDEl=document.getElementById('w_packerD');
+  var packerD=pkrDEl?(parseFloat(pkrDEl.value)||0):0;
+  var tvd=parseFloat(document.getElementById('c_td').value)||0;
+  var path=document.getElementById('c_path').value;
+  var fluidType=document.getElementById('w_fluidType').value;
+  var fdInput=document.getElementById('c_fd');
+  var fd, fdBase;
+
+  if(fluidType==='mistura'){
+    var bsw=parseFloat(document.getElementById('w_bsw').value)||0;
+    var rhoWater=parseFloat(document.getElementById('w_rhoWater').value)||8.4;
+    var rhoOil=parseFloat(document.getElementById('w_rhoOil').value)||6.8;
+    var b=bsw/100;
+    fd=+((b*rhoWater)+((1-b)*rhoOil)).toFixed(4);
+    fdBase=fd;
+    // Atualiza campo ρ efetiva BSW (readonly âmbar)
+    var bswDisp=document.getElementById('c_fd_bsw');
+    if(bswDisp){
+      bswDisp.value=fd.toFixed(3);
+      bswDisp.title='BSW='+bsw+'%:\n'+bsw+'%×'+rhoWater+' + '+(100-bsw)+'%×'+rhoOil+' = '+fd.toFixed(3)+' ppg';
+    }
+    var hb=document.getElementById('fd_hint_bsw');
+    if(hb)hb.textContent='⚡ '+bsw+'%×'+rhoWater+' + '+(100-bsw)+'%×'+rhoOil+' = '+fd.toFixed(3)+' ppg';
+    // também grava no c_fd (oculto) para compatibilidade
+    if(fdInput){fdInput.value=fd.toFixed(3);}
+    return {
+      wellName:(document.getElementById('w_wellName')||{}).value||'',
+      fluidType:fluidType, tvd:tvd, fd:fd, fdBase:fdBase,
+      bsw:bsw, rhoWater:rhoWater, rhoOil:rhoOil,
+      hasPacker:hasPacker, packerDepthM:packerD, path:path
+    };
+  } else {
+    fdBase=parseFloat(fdInput?fdInput.value:0)||0;
+    fd=fdBase;
+    if(fdInput){fdInput.readOnly=false;fdInput.style.borderColor='';fdInput.style.color='';fdInput.title='';}
+    var h2=document.getElementById('fd_hint');
+    if(h2){
+      var preset=FLUID_PRESETS[fluidType];
+      h2.textContent=preset&&preset.rho?('Típico: ~'+preset.rho.toFixed(2)+' ppg'):'1 ppg ≈ 0,052 psi/ft';
+      h2.style.color='';
+    }
+    return {
+      wellName:(document.getElementById('w_wellName')||{}).value||'',
+      fluidType:fluidType, tvd:tvd, fd:fd, fdBase:fdBase,
+      bsw:0, rhoWater:8.4, rhoOil:6.8,
+      hasPacker:hasPacker, packerDepthM:packerD, path:path
+    };
+  }
+}
+/* Profundidade de referência para Ph (limite da coluna hidrostática aplicada no fundo) */
+function referenceDepthM(){
+  var w=getWellData();
+  // U-effect (anular+coluna) ignora packer
+  if(w.path==='ambos') return w.tvd;
+  if(w.hasPacker && w.packerDepthM>0) return Math.min(w.packerDepthM, w.tvd);
+  return w.tvd;
+}
+
+/* =====================================================
+   CASING (com OD)
+   ===================================================== */
+function renderCasings(){
+  var el=document.getElementById('casing_list');
+  // ODs únicos do catálogo
+  var odList=[];
+  CASING_CATALOG.forEach(function(c){if(odList.indexOf(c.od)<0)odList.push(c.od);});
+
+  el.innerHTML=casingSections.map(function(s,i){
+    // Entrada atual
+    var curOD  = s.co;
+    var curW   = s.weight||0;
+    var curGr  = s.grade||'';
+    // Weights para o OD selecionado
+    var weights=CASING_CATALOG.filter(function(c){return Math.abs(c.od-curOD)<1e-4;});
+    // Entrada do catálogo correspondente
+    var entry  =weights.filter(function(c){return Math.abs(c.w-curW)<1e-4;})[0]||weights[0]||null;
+    var curID  = entry?entry.id:s.ci;
+    var curDrift=entry?entry.drift:0;
+    var grades  = entry?entry.grades:[];
+    var capFt  = (curID*curID)/1029.4;
+
+    // Selectores
+    var odSel='<select onchange="updCasing('+s.id+',\'od\',this.value)">'+
+      odList.map(function(od){
+        var lbl=CASING_CATALOG.find(function(c){return Math.abs(c.od-od)<1e-4;}).odLbl;
+        return '<option value="'+od+'"'+(Math.abs(od-curOD)<1e-4?' selected':'')+'>'+lbl+'</option>';
+      }).join('')+'</select>';
+
+    var wSel='<select onchange="updCasing('+s.id+',\'weight\',this.value)">'+
+      weights.map(function(c){
+        return '<option value="'+c.w+'"'+(Math.abs(c.w-curW)<1e-4?' selected':'')+'>'+c.w+' lb/pé  (ID='+c.id.toFixed(3)+'")</option>';
+      }).join('')+'</select>';
+
+    var grSel= grades.length?
+      '<select onchange="updCasing('+s.id+',\'grade\',this.value)">'+
+        grades.map(function(g){return '<option value="'+g+'"'+(g===curGr?' selected':'')+'>'+g+'</option>';}).join('')+
+      '</select>':
+      '<input type="text" value="—" disabled>';
+
+    return '<div class="dyn-section" id="csg_'+s.id+'">'+
+      (casingSections.length>1?'<button class="dyn-remove" onclick="removeCasing('+s.id+')">✕</button>':'')+
+      '<div class="dyn-title">Seção '+(i+1)+' — Revestimento '+(entry?entry.odLbl:'?')+' · '+s.fromM+'–'+s.toM+' m</div>'+
+      '<div class="fg">'+
+      '<div class="fl"><label>OD (in)</label>'+odSel+'</div>'+
+      '<div class="fl"><label>Peso (lb/pé) → ID auto</label>'+wSel+'</div>'+
+      '<div class="fl"><label>Grau do Aço</label>'+grSel+'</div>'+
+      '<div class="fl"><label>ID — automático (pol.)</label><input type="text" value="'+curID.toFixed(3)+'" disabled><p class="hint">Drift: '+curDrift.toFixed(3)+'"</p></div>'+
+      '<div class="fl"><label>Topo (m)</label><input type="number" value="'+s.fromM+'" step="50" onchange="updCasing('+s.id+',\'fromM\',this.value)"></div>'+
+      '<div class="fl"><label>Base (m)</label><input type="number" value="'+s.toM+'" step="50" onchange="updCasing('+s.id+',\'toM\',this.value)"></div>'+
+      '<div class="fl"><label>Capacidade</label><input type="text" value="'+(capFt*3.28084).toFixed(4)+' bbl/m" disabled></div>'+
+      '</div></div>';
+  }).join('');
+  uci();
+}
+
+function addCasing(){
+  var last=casingSections[casingSections.length-1];
+  var defEntry=CASING_CATALOG.filter(function(c){return Math.abs(c.od-7.0)<1e-4&&Math.abs(c.w-23)<1e-4;})[0]||CASING_CATALOG[0];
+  casingSections.push({
+    id:nextCasingId++,
+    co:defEntry.od, ci:defEntry.id,
+    weight:defEntry.w, grade:defEntry.grades[0]||'',
+    fromM:last?last.toM:0, toM:last?last.toM+500:1000
+  });
+  renderCasings();
+}
+
+function removeCasing(id){
+  casingSections=casingSections.filter(function(s){return s.id!==id;});
+  renderCasings();
+}
+
+function updCasing(id,field,val){
+  casingSections.forEach(function(s){
+    if(s.id!==id)return;
+    if(field==='od'){
+      s.co=parseFloat(val);
+      // Reset weight to first available for this OD
+      var opts=CASING_CATALOG.filter(function(c){return Math.abs(c.od-s.co)<1e-4;});
+      if(opts.length){s.weight=opts[0].w; s.ci=opts[0].id; s.grade=opts[0].grades[0]||'';}
+    } else if(field==='weight'){
+      s.weight=parseFloat(val);
+      var e=CASING_CATALOG.filter(function(c){return Math.abs(c.od-s.co)<1e-4&&Math.abs(c.w-s.weight)<1e-4;})[0];
+      if(e){s.ci=e.id; s.grade=e.grades.indexOf(s.grade)>=0?s.grade:(e.grades[0]||'');}
+    } else if(field==='grade'){
+      s.grade=val;
+    } else {
+      s[field]=parseFloat(val)||0;
+    }
+  });
+  renderCasings();
+}
+function pureCasingCapFt(s){return (s.ci*s.ci)/1029.4;}
+
+/* =====================================================
+   COLUMN — input é count + totalLen, unitLen auto
+   ===================================================== */
+function columnBottomsM(){
+  var d=0, arr=[];
+  columnSections.forEach(function(cs){
+    var len=cs.totalLen||0;
+    arr.push({section:cs, fromM:d, toM:d+len, lenM:len});
+    d+=len;
+  });
+  return {list:arr, totalM:d};
+}
+function setColumnMode(mode){
+  if(!mode){mode='desequipado';} // fallback se placeholder selecionado
+  columnMode=mode;
+  var addBtn=document.getElementById('col_add_btn');
+  var list=document.getElementById('column_list');
+  var sel=document.getElementById('c_path');
+  if(mode==='desequipado'){
+    if(addBtn)addBtn.style.display='none';
+    if(list)list.style.opacity='.4';
+    Array.prototype.forEach.call(sel.options,function(o){
+      if(o.value==='coluna'||o.value==='ambos')o.disabled=true;
+    });
+    sel.value='anular';
+  }else{
+    if(addBtn)addBtn.style.display='block';
+    if(list)list.style.opacity='1';
+    Array.prototype.forEach.call(sel.options,function(o){o.disabled=false;});
+  }
+  renderColumn();uci();
+}
+function addColumnSection(){
+  var last=columnSections[columnSections.length-1];
+  if(last&&last.type==='comando'){
+    columnSections.push({id:nextColId++,type:'comando',od:4.750,matchId:2.25,weight:"—",count:4,totalLen:38});
+  }else{
+    columnSections.push({id:nextColId++,type:'tubo',od:2.875,matchId:2.441,weight:"6,4 / 6,5",count:50,totalLen:475});
+  }
+  renderColumn();uci();
+}
+function removeColumnSection(id){
+  columnSections=columnSections.filter(function(s){return s.id!==id;});
+  renderColumn();uci();
+}
+function updColSection(id,field,val){
+  var s=columnSections.find(function(x){return x.id===id;});
+  if(!s)return;
+  if(field==='type'){
+    s.type=val;
+    if(val==='tubo'){s.od=2.875;s.matchId=2.441;s.weight="6,4 / 6,5";}
+    else if(val==='duoline'){var d=DUOLINE_CATALOG[0];s.od=d.od;s.matchId=d.id;s.weight=d.weight;}
+    else if(val==='comando'){s.od=4.750;s.matchId=2.25;s.weight="—";}
+    else if(val==='haste'){var r=RODS_CATALOG[0];s.od=r.diam;s.matchId=r.diam;s.weight=r.weight+' lb/pé';}
+    else if(val==='revestimento'){var c=CASING_CAT_COL[0];s.od=c.od;s.matchId=c.id;s.weight=c.weight;}
+  }else if(field==='od'){
+    s.od=parseFloat(val);
+    if(s.type==='tubo'){
+      var opts=TUBING_CATALOG.filter(function(t){return Math.abs(t.od-s.od)<1e-4;});
+      if(opts.length){s.matchId=opts[0].id;s.weight=opts[0].weight;}
+    }else if(s.type==='duoline'){
+      // od alone doesn't uniquely select duoline, keep current weight
+    }else if(s.type==='comando'){
+      var ids=COLLAR_IDS[s.od]||[];
+      if(ids.length){s.matchId=ids[0];s.weight="—";}
+    }else if(s.type==='haste'){
+      var rr=RODS_CATALOG.filter(function(r){return Math.abs(r.diam-s.od)<1e-4;})[0];
+      if(rr){s.matchId=rr.diam;s.weight=rr.weight+' lb/pé';}
+    }else if(s.type==='revestimento'){
+      var cc=CASING_CAT_COL.filter(function(c){return Math.abs(c.od-s.od)<1e-4;})[0];
+      if(cc){s.matchId=cc.id;s.weight=cc.weight;}
+    }
+  }else if(field==='variant'){
+    if(s.type==='tubo'){
+      var opt=TUBING_CATALOG.find(function(t){return Math.abs(t.od-s.od)<1e-4&&t.weight===val;});
+      if(opt){s.matchId=opt.id;s.weight=opt.weight;}
+    }else if(s.type==='duoline'){
+      var dv=DUOLINE_CATALOG.find(function(d){return d.weight===val;});
+      if(dv){s.od=dv.od;s.matchId=dv.id;s.weight=dv.weight;}
+    }else{
+      s.matchId=parseFloat(val);
+    }
+  }else if(field==='grade'){
+    s.grade=val;
+  }else if(field==='count'||field==='totalLen'){
+    s[field]=parseFloat(val)||0;
+  }
+  renderColumn();uci();
+}
+function renderColumn(){
+  var el=document.getElementById('column_list');
+  if(!el)return;
+  if(columnMode==='desequipado'){
+    el.innerHTML='<div style="padding:10px;font-size:11px;color:var(--muted);text-align:center">Poço desequipado: capacidade anular = ID² do revestimento em todo o intervalo.</div>';
+    return;
+  }
+  var typeLabels={tubo:'Tubos de Produção',duoline:'Duoline',comando:'Comandos',haste:'Hastes de Bombeio',revestimento:'Revestimento'};
+  el.innerHTML=columnSections.map(function(s,i){
+    var typeSel='<select onchange="updColSection('+s.id+',\'type\',this.value)">'+
+      '<option value="tubo"'+(s.type==='tubo'?' selected':'')+'>Tubo de Produção (API)</option>'+
+      '<option value="duoline"'+(s.type==='duoline'?' selected':'')+'>Duoline (FV / PEAD)</option>'+
+      '<option value="comando"'+(s.type==='comando'?' selected':'')+'>Comando</option>'+
+      '<option value="haste"'+(s.type==='haste'?' selected':'')+'>Haste de Bombeio</option>'+
+      '<option value="revestimento"'+(s.type==='revestimento'?' selected':'')+'>Revestimento</option>'+
+      '</select>';
+
+    var odList, odSel, variantSel, variantLabel, extraInfo='', gradeSel='';
+    if(s.type==='tubo'){
+      odList=Array.from(new Set(TUBING_CATALOG.map(function(t){return t.od;})));
+      odSel='<select onchange="updColSection('+s.id+',\'od\',this.value)">'+
+        odList.map(function(od){return '<option value="'+od+'"'+(Math.abs(od-s.od)<1e-4?' selected':'')+'>'+tubingLabel(od)+'</option>';}).join('')+'</select>';
+      var opts=TUBING_CATALOG.filter(function(t){return Math.abs(t.od-s.od)<1e-4;});
+      variantSel='<select onchange="updColSection('+s.id+',\'variant\',this.value)">'+
+        opts.map(function(o){return '<option value="'+o.weight+'"'+(o.weight===s.weight?' selected':'')+'>'+o.weight+' lb/pé  (ID '+o.id.toFixed(3)+'")</option>';}).join('')+'</select>';
+      variantLabel='Peso (lb/pé) / ID';
+      // Grade selector from TUBING_GRADES_MAP
+      var tubGrades=TUBING_GRADES_MAP[+s.od.toFixed(3)]||TUBING_GRADES_MAP[s.od]||['H-40','J-55','C-75','N-80'];
+      var curGrT=s.grade||tubGrades[0];
+      gradeSel='<div class="fl"><label>Grau do Aço</label>'+
+        '<select onchange="updColSection('+s.id+',\'grade\',this.value)">'+
+        tubGrades.map(function(g){return '<option value="'+g+'"'+(g===curGrT?' selected':'')+'>'+g+'</option>';}).join('')+
+        '</select></div>';
+    } else if(s.type==='duoline'){
+      odSel='<select onchange="updColSection('+s.id+',\'od\',this.value)">'+
+        DUOLINE_CATALOG.map(function(d){return '<option value="'+d.od+'"'+(Math.abs(d.od-s.od)<1e-4&&d.weight===s.weight?' selected':'')+'>'+d.weight+'</option>';}).join('')+'</select>';
+      var dOpts=DUOLINE_CATALOG;
+      variantSel='<select onchange="updColSection('+s.id+',\'variant\',this.value)">'+
+        dOpts.map(function(d){return '<option value="'+d.weight+'"'+(d.weight===s.weight?' selected':'')+'>'+d.weight+' — ID liner '+d.liner+'</option>';}).join('')+'</select>';
+      variantLabel='Especificação / Liner';
+      var dSel=DUOLINE_CATALOG.filter(function(d){return d.weight===s.weight;})[0]||DUOLINE_CATALOG[0];
+      extraInfo='<div class="fl"><label>Cap. Vol.</label><input type="text" value="'+dSel.cap.toFixed(6)+' bbl/m" disabled><p class="hint">Drift: '+dSel.drift+'"</p></div>';
+    } else if(s.type==='comando'){
+      odList=Object.keys(COLLAR_IDS).map(parseFloat);
+      odSel='<select onchange="updColSection('+s.id+',\'od\',this.value)">'+
+        odList.map(function(od){return '<option value="'+od+'"'+(Math.abs(od-s.od)<1e-4?' selected':'')+'>'+collarLabel(od)+'</option>';}).join('')+'</select>';
+      var ids=COLLAR_IDS[s.od]||[];
+      variantSel='<select onchange="updColSection('+s.id+',\'variant\',this.value)">'+
+        ids.map(function(id){return '<option value="'+id+'"'+(Math.abs(id-s.matchId)<1e-4?' selected':'')+'>ID '+idLabel(id)+'</option>';}).join('')+'</select>';
+      variantLabel='ID do comando';
+    } else if(s.type==='haste'){
+      odSel='<select onchange="updColSection('+s.id+',\'od\',this.value)">'+
+        RODS_CATALOG.map(function(r){return '<option value="'+r.diam+'"'+(Math.abs(r.diam-s.od)<1e-4?' selected':'')+'>'+r.label+'</option>';}).join('')+'</select>';
+      var rSel=RODS_CATALOG.filter(function(r){return Math.abs(r.diam-s.od)<1e-4;})[0]||RODS_CATALOG[0];
+      variantSel='<select disabled><option>'+rSel.weight+' lb/pé — Torq. '+rSel.torq+' lb·pé</option></select>';
+      variantLabel='Peso / Torque';
+      extraInfo='<div class="fl"><label>Tração de ruptura</label><input type="text" value="'+rSel.trac.toLocaleString('pt-BR')+' lbf" disabled></div>';
+    } else if(s.type==='revestimento'){
+      odSel='<select onchange="updColSection('+s.id+',\'od\',this.value)">'+
+        CASING_CAT_COL.map(function(c){return '<option value="'+c.od+'"'+(Math.abs(c.od-s.od)<1e-4?' selected':'')+'>'+c.label+'</option>';}).join('')+'</select>';
+      var cSel=CASING_CAT_COL.filter(function(c){return Math.abs(c.od-s.od)<1e-4;})[0]||CASING_CAT_COL[0];
+      variantSel='<select disabled><option>ID='+cSel.id+'" — '+cSel.weight+' lb/pé</option></select>';
+      variantLabel='ID / Peso';
+    }
+
+    var unitLen=(s.count>0)?(s.totalLen/s.count):0;
+    var depthSoFar=0;
+    for(var k=0;k<i;k++){depthSoFar+=columnSections[k].totalLen||0;}
+    var fromM=depthSoFar, toM=depthSoFar+(s.totalLen||0);
+    var secTitle=typeLabels[s.type]||s.type;
+
+    return '<div class="dyn-section" id="col_'+s.id+'">'+
+      (columnSections.length>1?'<button class="dyn-remove" onclick="removeColumnSection('+s.id+')">✕</button>':'')+
+      '<div class="dyn-title">Seção '+(i+1)+' — '+secTitle+' · '+fromM.toFixed(0)+'–'+toM.toFixed(0)+' m</div>'+
+      '<div class="fg">'+
+      '<div class="fl"><label>Tipo</label>'+typeSel+'</div>'+
+      '<div class="fl"><label>OD / Diâmetro</label>'+odSel+'</div>'+
+      '<div class="fl"><label>'+variantLabel+'</label>'+variantSel+'</div>'+
+      gradeSel+
+      extraInfo+
+      '<div class="fl"><label>Quantidade (peças)</label><input type="number" value="'+s.count+'" min="0" step="1" onchange="updColSection('+s.id+',\'count\',this.value)"></div>'+
+      '<div class="fl"><label>Comp. TOTAL (m)</label><input type="number" value="'+s.totalLen+'" step="0.1" onchange="updColSection('+s.id+',\'totalLen\',this.value)"><p class="hint">Informado em campo</p></div>'+
+      '<div class="fl"><label>Comp. unitário (média, m)</label><input type="text" value="'+unitLen.toFixed(2)+' m" disabled><p class="hint">= Total / Qtde</p></div>'+
+      '</div></div>';
+  }).join('');
+}
+
+/* Capacidade interior de um componente (bbl/ft) */
+function calcComponentCapFt(s){return (s.matchId*s.matchId)/1029.4;}
+
+/* =====================================================
+   CORE CAPACITY CALCULATIONS
+   ===================================================== */
+function buildInnerIntervals(){
+  var td=parseFloat(document.getElementById('c_td').value)||0;
+  if(cfg&&cfg.tdM)td=cfg.tdM;
+  if(columnMode==='desequipado'||columnSections.length===0){
+    return [{fromM:0,toM:td,od:0,id:0}];
+  }
+  var out=[],d=0;
+  columnSections.forEach(function(cs){
+    var len=cs.totalLen||0;
+    if(len<=0)return;
+    var to=Math.min(d+len,td);
+    if(to>d)out.push({fromM:d,toM:to,od:cs.od,id:cs.matchId});
+    d+=len;
+    if(d>=td)return;
+  });
+  if(d<td)out.push({fromM:d,toM:td,od:0,id:0});
+  return out;
+}
+function capAtDepth(fromM,toM){
+  var inner=buildInnerIntervals();
+  var totalBbl=0;
+  casingSections.forEach(function(cs){
+    inner.forEach(function(ii){
+      var top=Math.max(fromM,cs.fromM,ii.fromM);
+      var bot=Math.min(toM,cs.toM,ii.toM);
+      if(bot>top){
+        var capFt=Math.max(0,(cs.ci*cs.ci-ii.od*ii.od)/1029.4);
+        totalBbl+=capFt*(bot-top)*3.28084;
+      }
+    });
+  });
+  return totalBbl;
+}
+function capTubingAtDepth(fromM,toM){
+  if(columnMode==='desequipado')return 0;
+  var inner=buildInnerIntervals();
+  var totalBbl=0;
+  inner.forEach(function(ii){
+    if(ii.od===0)return;
+    var top=Math.max(fromM,ii.fromM);
+    var bot=Math.min(toM,ii.toM);
+    if(bot>top){
+      var capFt=(ii.id*ii.id)/1029.4;
+      totalBbl+=capFt*(bot-top)*3.28084;
+    }
+  });
+  return totalBbl;
+}
+function capCombined(fromM,toM){return capAtDepth(fromM,toM)+capTubingAtDepth(fromM,toM);}
+function capByPath(fromM,toM){
+  var path=document.getElementById('c_path').value;
+  if(path==='coluna')return capTubingAtDepth(fromM,toM);
+  if(path==='ambos')return capCombined(fromM,toM);
+  return capAtDepth(fromM,toM);
+}
+/* Pressão hidrostática em uma profundidade dada nível de fluido e ppg */
+/* PSI em metros: 0,1704 psi/m/ppg = 0,052 x 3,28084 */
+function hydroAtDepth(depthM,fluidTopM,fd){
+  var colM=Math.max(0,depthM-fluidTopM);
+  return +(0.1704*fd*colM).toFixed(2);
+}
+/* Pressão hidrostática APLICADA no fundo (limite = packer se aplicável) */
+function hydroBottom(fluidTopM,fd){
+  return hydroAtDepth(referenceDepthM(),fluidTopM,fd);
+}
+/* Capacidade média por ft no path atual */
+function avgCapPerFt(){
+  var td=parseFloat(document.getElementById('c_td').value)||0;
+  if(cfg&&cfg.tdM)td=cfg.tdM;
+  if(td<=0)return 0;
+  var totalBbl=capByPath(0,td);
+  var totalFt=td*3.28084;
+  return totalFt>0?totalBbl/totalFt:0;
+}
+
+/* =====================================================
+   RESERVOIR PRESSURE from STATIC LEVEL (NE) + BSW
+   ===================================================== */
+/* Densidade da mistura a partir do BSW (se fluidType=mistura) — informativo */
+function mixDensityFromBSW(bswPct, oilPpg, waterPpg){
+  var b=(bswPct||0)/100;
+  return b*(waterPpg||8.4) + (1-b)*(oilPpg||7.1);
+}
+/* Calcula Pressão do Reservatório no TOPO da zona, referência ao NE e ppg */
+function calcResPressure(zoneTopM, neM, fd){
+  var colM=Math.max(0, zoneTopM - neM);
+  return +(0.1704*fd*colM).toFixed(2);
+}
+
+/* =====================================================
+   ZONES
+   ===================================================== */
+function renderZones(){
+  var el=document.getElementById('zone_list');
+  var dry=document.getElementById('c_dry')&&document.getElementById('c_dry').checked;
+  var neM=dry?(parseFloat(document.getElementById('c_td').value)||0)
+              :(parseFloat(document.getElementById('c_ne').value)||0);
+  var w=getWellData();
+  var fd=w.fd||0;
+  var isBSW=(w.fluidType==='mistura');
+  var bswFrac=(w.bsw||0)/100;
+  var bswPct=w.bsw||0;
+  var rhoW=w.rhoWater||8.4;
+  var rhoO=w.rhoOil||6.8;
+
+  el.innerHTML=formZones.map(function(z,i){
+    var openChecked = z.open !== false;
+    var openLabel = openChecked
+      ? '<span style="color:var(--green);font-weight:600">● Aberta</span>'
+      : '<span style="color:var(--red);font-weight:600">● Fechada</span>';
+
+    // ── Coluna de fluido ──
+    var colM = Math.max(0, z.topoM - neM);
+
+    // ── Pr — fórmula correta por tipo de fluido ──
+    var prCalc, tipPr;
+    if(isBSW){
+      var hA=+(colM*bswFrac).toFixed(2);
+      var hO=+(colM*(1-bswFrac)).toFixed(2);
+      prCalc=+((hA*rhoW+hO*rhoO)*0.1704).toFixed(2);
+      tipPr=
+        'Pr = (H_água×ρ_água + H_óleo×ρ_óleo) × 0,1704\n'+
+        '──────────────────────────────\n'+
+        'Col. Fluido = Topo − NE = '+z.topoM+' − '+neM.toFixed(0)+' = '+colM.toFixed(1)+' m\n'+
+        'H_água = '+colM.toFixed(1)+' × '+bswPct+'% = '+hA+' m\n'+
+        'H_óleo  = '+colM.toFixed(1)+' × '+(100-bswPct)+'% = '+hO+' m\n'+
+        '──────────────────────────────\n'+
+        'Pr = ('+hA+'×'+rhoW+' + '+hO+'×'+rhoO+') × 0,1704\n'+
+        '   = ('+(hA*rhoW).toFixed(3)+' + '+(hO*rhoO).toFixed(3)+') × 0,1704\n'+
+        '   = '+prCalc.toFixed(2)+' psi';
+    } else {
+      prCalc=+(colM*fd*0.1704).toFixed(2);
+      tipPr=
+        'Pr = ρ × (Topo − NE) × 0,1704\n'+
+        '= '+fd.toFixed(3)+' × '+colM.toFixed(1)+' m × 0,1704\n'+
+        '= '+prCalc.toFixed(2)+' psi\n'+
+        '──────────────────\n'+
+        'Col. Fluido = '+z.topoM+' − '+neM.toFixed(0)+' = '+colM.toFixed(1)+' m';
+    }
+    z.fp=prCalc;
+
+    // ── EMW ──
+    var emw = (z.topoM > 0) ? (prCalc / (z.topoM * 0.1704)) : 0;
+    var emwStr = (z.topoM > 0) ? emw.toFixed(3)+' ppg' : '—';
+    var tipEmw =
+      'EMW = Pr / (Topo × 0,1704)\n'+
+      '= '+prCalc.toFixed(2)+' / ('+z.topoM+' × 0,1704)\n'+
+      '= '+prCalc.toFixed(2)+' / '+(z.topoM*0.1704).toFixed(4)+'\n'+
+      '= '+emwStr;
+    var tipCol='Col. Fluido = Topo − NE\n= '+z.topoM+' − '+neM.toFixed(0)+'\n= '+colM.toFixed(1)+' m';
+
+    var hintPr = isBSW
+      ? '⚡ (H_água×ρ_água + H_óleo×ρ_óleo)×0,1704'
+      : '⚡ ρ×(Topo−NE)×0,1704';
+
+    return '<div class="dyn-section" id="zone_'+z.id+'" style="border-color:'+(openChecked?'rgba(15,110,86,.35)':'rgba(163,45,45,.3)')+';background:'+(openChecked?'var(--card2)':'rgba(163,45,45,.03)')+'">'+
+      (formZones.length>1?'<button class="dyn-remove" onclick="removeZone('+z.id+')">✕</button>':'')+
+      '<div class="dyn-title" style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">'+
+        '<span>Zona '+(i+1)+': '+z.name+'</span>'+
+        '<label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:12px;font-weight:400">'+
+          '<input type="checkbox" '+(openChecked?'checked':'')+' onchange="updZone('+z.id+',\'open\',this.checked)" style="accent-color:var(--green);width:14px;height:14px">'+
+          openLabel+
+        '</label>'+
+      '</div>'+
+      '<div class="fg">'+
+      '<div class="fl"><label>Nome</label><input type="text" value="'+z.name+'" onchange="updZone('+z.id+',\'name\',this.value)"></div>'+
+      '<div class="fl"><label>Topo (m TVD)</label><input type="number" value="'+z.topoM+'" step="10" onchange="updZone('+z.id+',\'topoM\',this.value)"></div>'+
+      '<div class="fl"><label>Base (m TVD)</label><input type="number" value="'+z.baseM+'" step="10" onchange="updZone('+z.id+',\'baseM\',this.value)"></div>'+
+      '<div class="fl"><label>Col. Fluido (Topo−NE) '+tipWrap(tipCol)+'</label>'+
+        '<input type="text" id="zone_col_'+z.id+'" value="'+colM.toFixed(1)+' m" readonly style="background:var(--card2)">'+
+        '<p class="hint" id="zone_col_hint_'+z.id+'">'+z.topoM+' − '+neM.toFixed(0)+' m</p>'+
+      '</div>'+
+      '<div class="fl"><label>Pressão de Formação (psi) '+tipWrap(tipPr)+'</label>'+
+        '<input type="text" id="zone_pr_'+z.id+'" value="'+prCalc.toFixed(2)+'" readonly style="border-color:var(--green);color:var(--green-text);background:var(--green-bg)">'+
+        '<p class="hint" style="color:var(--green)">'+hintPr+'</p>'+
+      '</div>'+
+      '<div class="fl"><label>ρ Equiv. (ppg) '+tipWrap(tipEmw)+'</label>'+
+        '<input type="text" id="zone_emw_'+z.id+'" value="'+emwStr+'" readonly style="border-color:var(--amber);color:var(--amber);background:var(--amber-bg)">'+
+        '<p class="hint" style="color:var(--amber)">Pr / (Topo × 0,1704)</p>'+
+      '</div>'+
+      '</div></div>';
+  }).join('');
+  // NÃO chama uci() — callers chamam separadamente para evitar recursão.
+}
+
+/* Atualiza Pr e EMW das zonas SEM re-renderizar o HTML inteiro.
+   Chamado por uci() sempre que NE ou densidade muda. */
+function refreshZoneCalcs(){
+  var dry=document.getElementById('c_dry')&&document.getElementById('c_dry').checked;
+  var neM=dry?(parseFloat(document.getElementById('c_td').value)||0)
+              :(parseFloat(document.getElementById('c_ne').value)||0);
+  var w=getWellData();
+  var fd=w.fd||0;
+  var isBSW=(w.fluidType==='mistura');
+  var bswFrac=(w.bsw||0)/100;
+  var rhoW=w.rhoWater||8.4;
+  var rhoO=w.rhoOil||6.8;
+
+  formZones.forEach(function(z){
+    var colM=Math.max(0,z.topoM-neM);
+    var prCalc;
+    if(isBSW){
+      var hA=colM*bswFrac;
+      var hO=colM*(1-bswFrac);
+      prCalc=+((hA*rhoW+hO*rhoO)*0.1704).toFixed(2);
+    } else {
+      prCalc=+(colM*fd*0.1704).toFixed(2);
+    }
+    z.fp=prCalc;
+    var emw=(z.topoM>0)?(prCalc/(z.topoM*0.1704)):0;
+    var emwStr=(z.topoM>0)?emw.toFixed(3)+' ppg':'—';
+    var colEl=document.getElementById('zone_col_'+z.id);
+    if(colEl)colEl.value=colM.toFixed(1)+' m';
+    var colHint=document.getElementById('zone_col_hint_'+z.id);
+    if(colHint)colHint.textContent=z.topoM+' − '+neM.toFixed(0)+' m';
+    var prEl=document.getElementById('zone_pr_'+z.id);
+    if(prEl)prEl.value=prCalc.toFixed(2);
+    var emwEl=document.getElementById('zone_emw_'+z.id);
+    if(emwEl)emwEl.value=emwStr;
+  });
+}
+function addZone(){
+  formZones.push({id:nextZoneId++,name:'Zona '+(formZones.length+1),topoM:2500,baseM:2540,fp:0,open:true});
+  renderZones();uci();
+}
+function removeZone(id){
+  formZones=formZones.filter(function(z){return z.id!==id;});
+  renderZones();uci();
+}
+function updZone(id,field,val){
+  formZones.forEach(function(z){
+    if(z.id!==id)return;
+    if(field==='name') z[field]=val;
+    else if(field==='open') z[field]=(val===true||val==='true');
+    else z[field]=parseFloat(val)||0;
+  });
+  renderZones();uci();
+}
+
+/* =====================================================
+   CAPACIDADES — SUMMARY
+   ===================================================== */
+function renderCapSummary(){
+  var el=document.getElementById('capSummary');
+  if(!el)return;
+  var w=getWellData();
+  var td=w.tvd;
+  if(td<=0){el.innerHTML='<p style="color:var(--muted);font-size:12px">Defina o TVD para calcular as capacidades.</p>';return;}
+  var cb=columnBottomsM();
+  var capAn=capAtDepth(0,td);
+  var capCol=capTubingAtDepth(0,td);
+  var capBoth=capCombined(0,td);
+  var prevMode=columnMode;
+  columnMode='desequipado';
+  var capDesequip=capAtDepth(0,td);
+  columnMode=prevMode;
+
+  // Volume acima do packer (aplicável no teste)
+  var refD=referenceDepthM();
+  var capAnPacker=capAtDepth(0,refD);
+  var capColPacker=capTubingAtDepth(0,refD);
+  var capBothPacker=capCombined(0,refD);
+
+  var grad_m=0.1704*w.fd; // psi/m — sem ft
+  var grad_ft=grad_m/3.28084; // legado
+
+  // --- Tooltips com fórmulas detalhadas ---
+  function fmtAnularSections(fromLimit, toLimit){
+    var inner=buildInnerIntervals();
+    var lines=[];
+    casingSections.forEach(function(cs){
+      inner.forEach(function(ii){
+        var top=Math.max(fromLimit,cs.fromM,ii.fromM);
+        var bot=Math.min(toLimit,cs.toM,ii.toM);
+        if(bot>top){
+          var capFt=Math.max(0,(cs.ci*cs.ci-ii.od*ii.od)/1029.4);
+          var lenFt=(bot-top)*3.28084;
+          var bbl=capFt*lenFt;
+          var odLabel=ii.od>0?(' − '+ii.od.toFixed(3)+'²'):'';
+          lines.push('('+cs.ci.toFixed(3)+'²'+odLabel+') / 1029,4 × '+lenFt.toFixed(0)+' ft = '+bbl.toFixed(3)+' bbl\n  [csg '+cs.fromM+'–'+cs.toM+'m | col '+ii.fromM+'–'+ii.toM+'m]');
+        }
+      });
+    });
+    return lines.length?lines.join('\n'):'(sem seções coincidentes)';
+  }
+  function fmtColunaSections(fromLimit, toLimit){
+    if(columnMode==='desequipado')return 'Poço desequipado — sem coluna';
+    var inner=buildInnerIntervals();
+    var lines=[];
+    inner.forEach(function(ii){
+      if(ii.od===0)return;
+      var top=Math.max(fromLimit,ii.fromM);
+      var bot=Math.min(toLimit,ii.toM);
+      if(bot>top){
+        var capFt=(ii.id*ii.id)/1029.4;
+        var lenFt=(bot-top)*3.28084;
+        lines.push(ii.id.toFixed(3)+'² / 1029,4 × '+lenFt.toFixed(0)+' ft = '+(capFt*lenFt).toFixed(3)+' bbl\n  [col '+ii.fromM+'–'+ii.toM+'m]');
+      }
+    });
+    return lines.length?lines.join('\n'):'(sem seções de coluna)';
+  }
+  function fmtDesequipSections(fromLimit, toLimit){
+    var lines=[];
+    casingSections.forEach(function(cs){
+      var top=Math.max(fromLimit,cs.fromM);
+      var bot=Math.min(toLimit,cs.toM);
+      if(bot>top){
+        var capFt=(cs.ci*cs.ci)/1029.4;
+        var lenFt=(bot-top)*3.28084;
+        lines.push(cs.ci.toFixed(3)+'² / 1029,4 × '+lenFt.toFixed(0)+' ft = '+(capFt*lenFt).toFixed(3)+' bbl\n  [csg '+cs.fromM+'–'+cs.toM+'m]');
+      }
+    });
+    return lines.length?lines.join('\n'):'(sem seções)';
+  }
+
+  var tipGrad='G = ρ × 0,1704 psi/m/ppg\n= '+w.fd.toFixed(3)+' × 0,1704\n= '+grad_m.toFixed(4)+' psi/m';
+  var tipRef=w.hasPacker&&w.path!=='ambos'?'Packer em '+w.packerDepthM+' m → ref = min(packer, TVD)\nmin('+w.packerDepthM+', '+w.tvd+') = '+refD.toFixed(0)+' m':'Sem packer (ou U-effect) → ref = TVD = '+refD.toFixed(0)+' m';
+  var tipAn='Σ (ID²_csg − OD²_col) / 1029,4 × len(ft)\n──────────────────────────────\n'+fmtAnularSections(0,td)+'\n──────────────────────────────\nTOTAL = '+capAn.toFixed(3)+' bbl';
+  var tipCol='Σ ID²_col / 1029,4 × len(ft)\n──────────────────────────────\n'+fmtColunaSections(0,td)+'\n──────────────────────────────\nTOTAL = '+capCol.toFixed(3)+' bbl';
+  var tipBoth='Anular + Coluna interior\n'+capAn.toFixed(3)+' + '+capCol.toFixed(3)+' = '+capBoth.toFixed(3)+' bbl';
+  var tipAnRef='Mesmo cálculo anular, limitado a ref. '+refD.toFixed(0)+' m:\n'+fmtAnularSections(0,refD)+'\nTOTAL = '+capAnPacker.toFixed(3)+' bbl';
+  var tipColRef='Mesmo cálculo coluna, limitado a ref. '+refD.toFixed(0)+' m:\n'+fmtColunaSections(0,refD)+'\nTOTAL = '+capColPacker.toFixed(3)+' bbl';
+  var tipBothRef='Anular + Coluna, até ref. '+refD.toFixed(0)+' m:\n'+capAnPacker.toFixed(3)+' + '+capColPacker.toFixed(3)+' = '+capBothPacker.toFixed(3)+' bbl';
+  var tipDesequip='Σ ID²_csg / 1029,4 × len(ft)  [sem coluna]\n──────────────────────────────\n'+fmtDesequipSections(0,td)+'\n──────────────────────────────\nTOTAL = '+capDesequip.toFixed(3)+' bbl';
+
+  var pathLabels={anular:'Anular',coluna:'Coluna',ambos:'Coluna + Anular (U)'};
+
+  // Helpers: imputado por seção
+  function imputadoAnular(fromL,toL){
+    var inner=buildInnerIntervals();
+    var parts=[];
+    casingSections.forEach(function(cs){
+      inner.forEach(function(ii){
+        var top=Math.max(fromL,cs.fromM,ii.fromM);
+        var bot=Math.min(toL,cs.toM,ii.toM);
+        if(bot>top){
+          var odPart=ii.od>0?' − '+ii.od.toFixed(3)+'²':'';
+          parts.push('('+cs.ci.toFixed(3)+'²'+odPart+') / 1029,4 × '+((bot-top)*3.28084).toFixed(0)+'ft');
+        }
+      });
+    });
+    return parts.join('<br>');
+  }
+  function imputadoColuna(fromL,toL){
+    var inner=buildInnerIntervals();
+    var parts=[];
+    inner.forEach(function(ii){
+      if(ii.od===0)return;
+      var top=Math.max(fromL,ii.fromM);
+      var bot=Math.min(toL,ii.toM);
+      if(bot>top)
+        parts.push(ii.id.toFixed(3)+'² / 1029,4 × '+((bot-top)*3.28084).toFixed(0)+'ft');
+    });
+    return parts.length?parts.join('<br>'):'—';
+  }
+  function imputadoDesequip(fromL,toL){
+    var parts=[];
+    casingSections.forEach(function(cs){
+      var top=Math.max(fromL,cs.fromM);
+      var bot=Math.min(toL,cs.toM);
+      if(bot>top)
+        parts.push(cs.ci.toFixed(3)+'² / 1029,4 × '+((bot-top)*3.28084).toFixed(0)+'ft');
+    });
+    return parts.join('<br>');
+  }
+
+  // Estilo das células
+  var S_={
+    lbl:'font-family:-apple-system,sans-serif;color:var(--muted);font-size:12px',
+    form:'font-family:"SF Mono",monospace;font-size:10.5px;color:var(--blue)',
+    imp:'font-family:"SF Mono",monospace;font-size:10.5px;color:var(--text)',
+    res:'font-family:"SF Mono",monospace;font-size:12px;font-weight:600',
+    obs:'font-size:10px;color:var(--hint);text-align:right'
+  };
+  function R(param,tip,formula,imputado,resultado,obs,hl){
+    var bg=hl?'background:rgba(45,106,79,.06);':'';
+    return '<tr style="'+bg+'">'+
+      '<td style="'+S_.lbl+'">'+param+(tip?tipWrap(tip):'')+'</td>'+
+      '<td style="'+S_.form+'">'+formula+'</td>'+
+      '<td style="'+S_.imp+'">'+imputado+'</td>'+
+      '<td style="'+S_.res+'">'+resultado+'</td>'+
+      '<td style="'+S_.obs+'">'+obs+'</td>'+
+      '</tr>';
+  }
+
+  var hasPkr = w.hasPacker && w.packerDepthM>0 && w.path!=='ambos' && refD<td;
+  // Com packer → mostra "até Packer" (refD). Sem packer → mostra "até TVD".
+
+  var lblRef = hasPkr
+    ? 'Vol. Anular (0 → Packer '+refD.toFixed(0)+'m)'
+    : 'Vol. Anular (0 → TVD '+td.toFixed(0)+'m)';
+  var lblRefCol = hasPkr
+    ? 'Vol. Coluna (0 → Packer '+refD.toFixed(0)+'m)'
+    : 'Vol. Coluna (0 → TVD '+td.toFixed(0)+'m)';
+  var lblRefBoth = hasPkr
+    ? 'Vol. Combinado U (0 → Packer '+refD.toFixed(0)+'m)'
+    : 'Vol. Combinado U (0 → TVD '+td.toFixed(0)+'m)';
+
+  // Valores a usar: sempre 0→TVD para a linha principal, e 0→Ref quando packer
+  var capAnShow    = hasPkr ? capAnPacker    : capAn;
+  var capColShow   = hasPkr ? capColPacker   : capCol;
+  var capBothShow  = hasPkr ? capBothPacker  : capBoth;
+  var tipAnShow    = hasPkr ? tipAnRef  : tipAn;
+  var tipColShow   = hasPkr ? tipColRef : tipCol;
+  var tipBothShow  = hasPkr ? tipBothRef: tipBoth;
+  var depth4imp    = hasPkr ? refD : td;
+
+  var html='<table class="cap-tbl">'+
+    '<tr>'+
+      '<th style="min-width:160px">Parâmetro</th>'+
+      '<th style="min-width:180px">Fórmula</th>'+
+      '<th style="min-width:200px">Valores Imputados</th>'+
+      '<th style="min-width:110px">Resultado</th>'+
+      '<th style="text-align:right;min-width:120px">Observação</th>'+
+    '</tr>'+
+    R('Gradiente Hidrostático',tipGrad,
+      'ρ × 0,1704 psi/m/ppg',
+      'ρ = '+w.fd.toFixed(3)+' ppg',
+      grad_m.toFixed(4)+' psi/m',
+      '0,1704 = 0,052 × 3,28084')+
+    R('Prof. Referência Hidrostática',tipRef,
+      hasPkr?'min(packer, TVD)':'TVD',
+      hasPkr?'packer = '+w.packerDepthM+' m | TVD = '+w.tvd+' m':'TVD = '+w.tvd+' m',
+      refD.toFixed(0)+' m',
+      pathLabels[w.path]+(hasPkr?' — limitado ao packer':''))+
+    R('Sapata da Coluna',null,
+      'Σ comp. seções',
+      columnMode==='desequipado'?'poço desequipado':'seções: '+columnSections.map(function(s){return s.totalLen.toFixed(0)+'m';}).join(' + '),
+      columnMode==='desequipado'?'—':cb.totalM.toFixed(0)+' m',
+      columnMode==='desequipado'?'desequipado':'total acumulado')+
+    R('<strong>'+lblRef+'</strong>',tipAnShow,
+      'Σ (ID²rev − OD²col) / 1029,4 × L',
+      imputadoAnular(0,depth4imp)||'—',
+      '<strong>'+capAnShow.toFixed(3)+' bbl</strong>',
+      'ID em polegadas; L em ft',true)+
+    R('<strong>'+lblRefCol+'</strong>',tipColShow,
+      'Σ ID²col / 1029,4 × L',
+      imputadoColuna(0,depth4imp)||'—',
+      '<strong>'+capColShow.toFixed(3)+' bbl</strong>',
+      'ID da coluna em pol.',true)+
+    R('<strong>'+lblRefBoth+'</strong>',tipBothShow,
+      'V_anular + V_coluna',
+      capAnShow.toFixed(3)+' + '+capColShow.toFixed(3)+' bbl',
+      '<strong>'+capBothShow.toFixed(3)+' bbl</strong>',
+      hasPkr?'Anular + Coluna até packer':'Anular + Coluna',true)+
+    (hasPkr?
+      R('Vol. Anular total (0 → TVD '+td.toFixed(0)+'m) — ref.',tipAn,
+        'Σ (ID²rev − OD²col) / 1029,4 × L',
+        imputadoAnular(0,td)||'—',
+        capAn.toFixed(3)+' bbl',
+        'volume total do poço (informativo)')
+      : '')+
+    R('Cap. se Desequipado (ref.)',tipDesequip,
+      'Σ ID²rev / 1029,4 × L',
+      imputadoDesequip(0,depth4imp)||'—',
+      capDesequip.toFixed(3)+' bbl',
+      'sem coluna — ID²rev')+
+    '</table>';
+  el.innerHTML=html;
+
+  // ── TABELA DE CAPACIDADE POR SEÇÃO ──────────────────────────────────
+  var inner=buildInnerIntervals();
+  var isEquip=(columnMode==='equipado'&&columnSections.length>0);
+  var path=w.path;
+
+  var secHtml='<p style="font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--amber);margin:14px 0 6px">'+
+    'Detalhamento — Capacidade por Seção ('+pathLabels[path]+')'+
+  '</p>';
+
+  // Cabeçalho adaptativo conforme via selecionada
+  var hdrAn = path==='coluna'?'':'<th>ID Rev (in)</th><th>OD Col (in)</th><th style="color:var(--amber)">Cap. Anular<br>(bbl/m)</th>';
+  var hdrCol= (path==='coluna'||path==='ambos')&&isEquip?'<th>ID Tubo (in)</th><th style="color:var(--green-text)">Cap. Coluna<br>(bbl/m)</th>':'';
+  var hdrTot= path==='ambos'&&isEquip?'<th style="font-weight:600">Cap. Total<br>(bbl/m)</th>':'';
+
+  secHtml+='<table class="cap-tbl"><tr>'+
+    '<th>Seção</th><th>Intervalo (m)</th><th>Fórmula</th>'+
+    hdrAn+hdrCol+hdrTot+
+    '<th>Volume (bbl)</th>'+
+  '</tr>';
+
+  // Itera combinação revestimento × coluna
+  var rows=[];
+  casingSections.forEach(function(cs){
+    inner.forEach(function(ii){
+      var top=Math.max(cs.fromM,ii.fromM);
+      var bot=Math.min(cs.toM,ii.toM);
+      if(bot<=top)return;
+      var lenM=bot-top;
+      var lenFt=lenM*3.28084;
+      var capAnFt=Math.max(0,(cs.ci*cs.ci-ii.od*ii.od)/1029.4);
+      var capAnM=capAnFt*3.28084;
+      var capColFt=ii.od>0?(ii.id*ii.id)/1029.4:0;
+      var capColM=capColFt*3.28084;
+      var capTotM=capAnM+capColM;
+      var volAn=capAnFt*lenFt;
+      var volCol=capColFt*lenFt;
+      var volTot=path==='coluna'?volCol:(path==='ambos'?volAn+volCol:volAn);
+
+      // Fórmula descritiva
+      var odPart=ii.od>0?' − '+ii.od.toFixed(3)+'²':'';
+      var formula=path==='coluna'
+        ? ii.id.toFixed(3)+'² / 1029,4'
+        : '('+cs.ci.toFixed(3)+'²'+odPart+') / 1029,4';
+      if(path==='ambos'&&ii.od>0)
+        formula='An: ('+cs.ci.toFixed(3)+'²−'+ii.od.toFixed(3)+'²)/1029,4<br>Col: '+ii.id.toFixed(3)+'²/1029,4';
+
+      // Linha de detalhe por sub-seção
+      var csgLabel=cs.co+'" '+(cs.grade||'')+(cs.weight?' '+cs.weight+'#':'');
+      var colLabel=ii.od>0?ii.od.toFixed(3)+'"':'—';
+      var colId=ii.od>0?ii.id.toFixed(3)+'"':'—';
+
+      var tdAn = path!=='coluna'
+        ? '<td>'+cs.ci.toFixed(3)+'</td>'+
+          '<td style="color:'+(ii.od>0?'var(--amber)':'var(--muted)')+'">'+colLabel+'</td>'+
+          '<td style="font-weight:600;color:var(--amber)">'+capAnM.toFixed(4)+'</td>'
+        : '';
+      var tdCol= (path==='coluna'||path==='ambos')&&isEquip
+        ? '<td style="color:var(--green-text)">'+colId+'</td>'+
+          '<td style="font-weight:600;color:var(--green-text)">'+capColM.toFixed(4)+'</td>'
+        : '';
+      var tdTot= path==='ambos'&&isEquip
+        ? '<td style="font-weight:700">'+capTotM.toFixed(4)+'</td>'
+        : '';
+
+      secHtml+='<tr>'+
+        '<td class="lbl">'+csgLabel+'</td>'+
+        '<td>'+top+' – '+bot+' m<br><span style="font-size:10px;color:var(--muted)">'+lenM.toFixed(0)+' m / '+lenFt.toFixed(0)+' ft</span></td>'+
+        '<td style="font-size:10.5px;font-family:\'SF Mono\',monospace;color:var(--blue)">'+formula+'</td>'+
+        tdAn+tdCol+tdTot+
+        '<td style="font-weight:600">'+volTot.toFixed(3)+' bbl</td>'+
+      '</tr>';
+      rows.push(volTot);
+    });
+  });
+
+  // Totalizador
+  var totalVol=rows.reduce(function(a,b){return a+b;},0);
+  var colCount=3+(path!=='coluna'?3:0)+((path==='coluna'||path==='ambos')&&isEquip?2:0)+(path==='ambos'&&isEquip?1:0)+1;
+  secHtml+='<tr style="background:var(--amber-bg);font-weight:700">'+
+    '<td colspan="'+(colCount-1)+'" style="text-align:right;color:var(--amber)">TOTAL — '+pathLabels[path]+'</td>'+
+    '<td style="color:var(--amber)">'+totalVol.toFixed(3)+' bbl</td>'+
+  '</tr>';
+  secHtml+='</table>';
+  el.innerHTML+=secHtml;
+}
+
+
+
+/* =====================================================
+   TESTE DE ABSORÇÃO — Pressão Res + Overbalance Proposto
+   ===================================================== */
+function renderTestResults(){
+  var el=document.getElementById('testResults');
+  if(!el)return;
+  var w=getWellData();
+  var dry=document.getElementById('c_dry').checked;
+  var neM=dry?w.tvd:(parseFloat(document.getElementById('c_is').value)||0);
+  var ob=parseFloat(document.getElementById('c_ot').value)||0;
+  var path=w.path;
+
+  if(w.tvd<=0||w.fd<=0||formZones.length===0){
+    el.innerHTML='<p style="color:var(--muted);font-size:12px">Preencha TVD, densidade e ao menos uma zona.</p>';
+    return;
+  }
+  var refD=referenceDepthM();
+  // Pressão hidrostática aplicada no fundo (limite do packer / TVD)
+  var phBottom=hydroBottom(neM, w.fd);
+
+  // Para cada zona, calcula Pr (no TOPO) a partir do NE
+  var zoneRows=formZones.map(function(z){
+    var pr=calcResPressure(z.topoM, neM, w.fd);
+    var phAtTop=hydroAtDepth(z.topoM, neM, w.fd); // Ph no topo da zona se fluido estivesse contínuo
+    // Diferencial atual (considerando packer como limite):
+    var phApplied=phBottom; // pressão aplicada no fundo do sistema
+    var deltaNow=phApplied - pr;
+    return {z:z, pr:pr, phAtTop:phAtTop, phApplied:phApplied, deltaNow:deltaNow};
+  });
+  // Zona crítica = zona ABERTA com maior Pr (mais difícil de sobre-pressionar)
+  var openZoneRows=zoneRows.filter(function(r){return r.z.open!==false;});
+  var poolForCrit=openZoneRows.length>0?openZoneRows:zoneRows;
+  var critical=poolForCrit.reduce(function(a,b){return a.pr>b.pr?a:b;});
+  var prCrit=critical.pr;
+
+  // Pressão alvo no fundo para OB na zona crítica
+  var tgtBottomPsi = prCrit + ob;
+  var deficit = Math.max(0, tgtBottomPsi - phBottom);
+
+  // Metros de fluido necessários para chegar à pressão alvo
+  var grad_m=0.1704*w.fd; // psi/m metros
+  var metersNeeded = grad_m>0 ? deficit/grad_m : 0;
+
+  // Volume necessário pela via selecionada: injeção a partir do NE atual
+  // (a coluna de fluido cresce do NE para cima em 'metersNeeded')
+  var newNE = Math.max(0, neM - metersNeeded);
+  var volNeeded = capByPath(newNE, neM); // volume a preencher entre novo NE e NE atual
+  if(deficit<=0){volNeeded=0; metersNeeded=0;}
+
+  var pathLabels={anular:'Anular',coluna:'Coluna',ambos:'Coluna + Anular'};
+  var fluidLbl=({oleo:'Óleo cru',agua:'Água',salmoura:'Salmoura',mistura:'Óleo+Água (BSW '+w.bsw+'%)',lama:'Lama',outro:'Outro'})[w.fluidType]||w.fluidType;
+
+  // col em metros — ft não usado
+
+  var tipPh='Ph = ρ × col_m × 0,1704\n= '+w.fd.toFixed(3)+' × '+(refD-neM).toFixed(1)+' m × 0,1704\n= '+phBottom.toFixed(2)+' psi  (ref. '+refD.toFixed(0)+' m)';
+  var tipPr='Pr = ρ × (Topo−NE) × 0,1704\n= '+w.fd.toFixed(3)+' × '+(critical.z.topoM-neM).toFixed(1)+' m × 0,1704\n= '+prCrit.toFixed(2)+' psi  [zona '+critical.z.name+']';
+  var tipTgt='Pr_crit + OB_alvo\n= '+prCrit.toFixed(1)+' + '+ob+'\n= '+tgtBottomPsi.toFixed(1)+' psi';
+  var tipDef='max(0 ; Alvo − Ph_atual)\n= max(0 ; '+tgtBottomPsi.toFixed(1)+' − '+phBottom.toFixed(1)+')\n= '+deficit.toFixed(1)+' psi';
+  var tipM='déficit / grad_m\ngrad_m = '+w.fd.toFixed(3)+' × 0,1704 = '+grad_m.toFixed(4)+' psi/m\n= '+deficit.toFixed(2)+' / '+grad_m.toFixed(4)+'\n= '+metersNeeded.toFixed(2)+' m';
+  var tipVol='cap(NE_novo → NE_atual) via '+pathLabels[path]+'\ncap('+newNE.toFixed(0)+'m → '+neM.toFixed(0)+'m)\n= '+volNeeded.toFixed(3)+' bbl';
+
+  // ── Cards Pr por zona ────────────────────────────────────────────
+  var zoneHpCards='';
+  zoneRows.forEach(function(r){
+    var isOpen=r.z.open!==false;
+    if(!isOpen)return;
+    var isCrit=(r===critical);
+    var colH2=Math.max(0,r.z.topoM-neM);
+    var psiTop2=+(colH2*w.fd*0.1704).toFixed(2);
+    var tipPrZone='Pr ('+r.z.name+') = ρ × (Topo − NE) × 0,1704\n= '+w.fd.toFixed(3)+' × '+colH2.toFixed(1)+' m × 0,1704\n= '+r.pr.toFixed(2)+' psi';
+    zoneHpCards+='<div class="result-card hot has-tip" style="position:relative'+(isCrit?';border-color:var(--red);':'')+'">'
+      +'<span class="tip-wrap" style="position:absolute;top:10px;right:10px">ℹ<span class="tip-box">'+tipPrZone+'</span></span>'
+      +'<div class="result-lbl">Pr Reservatório — '+r.z.name+(isCrit?' ⚠ crítica':'')+'</div>'
+      +'<div class="result-val">'+r.pr.toFixed(0)+'</div>'
+      +'<div class="result-unit">psi · topo '+r.z.topoM+' m · '+fluidLbl+'</div>'
+      +'</div>';
+  });
+
+  var html='<div class="result-grid">'+
+    '<div class="result-card">'+
+      '<div class="result-lbl">Nível Estático (h₀)</div>'+
+      '<div class="result-val">'+neM.toFixed(0)+'</div>'+
+      '<div class="result-unit">m ('+(neM*3.28084).toFixed(0)+' ft)</div>'+
+    '</div>'+
+    zoneHpCards+
+    '<div class="result-card hot has-tip" style="position:relative"><span class="tip-wrap" style="position:absolute;top:10px;right:10px">ℹ<span class="tip-box">'+tipTgt+'</span></span>'+
+      '<div class="result-lbl">Alvo no Fundo (Pr + OB)</div>'+
+      '<div class="result-val">'+tgtBottomPsi.toFixed(0)+'</div>'+
+      '<div class="result-unit">psi · OB alvo '+ob+' psi</div>'+
+    '</div>'+
+    '<div class="result-card cool has-tip" style="position:relative"><span class="tip-wrap" style="position:absolute;top:10px;right:10px">ℹ<span class="tip-box">'+tipDef+'</span></span>'+
+      '<div class="result-lbl">Déficit para OB</div>'+
+      '<div class="result-val">'+deficit.toFixed(0)+'</div>'+
+      '<div class="result-unit">psi a ser adicionado</div>'+
+    '</div>'+
+    '<div class="result-card cool has-tip" style="position:relative"><span class="tip-wrap" style="position:absolute;top:10px;right:10px">ℹ<span class="tip-box">'+tipM+'</span></span>'+
+      '<div class="result-lbl">Metros de Fluido Necessários</div>'+
+      '<div class="result-val">'+metersNeeded.toFixed(1)+'</div>'+
+      '<div class="result-unit">m · grad. '+grad_m.toFixed(4)+' psi/m</div>'+
+    '</div>'+
+    '<div class="result-card cool has-tip" style="position:relative"><span class="tip-wrap" style="position:absolute;top:10px;right:10px">ℹ<span class="tip-box">'+tipVol+'</span></span>'+
+      '<div class="result-lbl">Volume para Bombear ('+pathLabels[path]+')</div>'+
+      '<div class="result-val">'+volNeeded.toFixed(2)+'</div>'+
+      '<div class="result-unit">bbl · novo NE ≈ '+newNE.toFixed(0)+' m</div>'+
+    '</div>'+
+    '</div>';
+
+  // ── Tabela por zona: BSW correto, cálculo em METROS ──
+  var isBSW = w.fluidType === 'mistura';
+  var rhoW = w.rhoWater||8.4, rhoO = w.rhoOil||6.8;
+  var bswFrac = (w.bsw||0)/100;
+
+  var zth = '<table class="cap-tbl" style="margin-top:8px"><tr>'+
+    '<th>Zona</th><th>Status</th><th>Topo (m)</th>'+
+    '<th>Col. Hidrostática (m)'+tipWrap('= Topo_Zona − Nível Estático (NE)\nAltura de fluido acima do topo da zona')+'</th>'+
+    (isBSW ? '<th>Alt. Água (m)'+tipWrap('= Col. Hidrostática × BSW%\nAltura da coluna ocupada por água')+'</th>'+
+              '<th>Alt. Óleo (m)'+tipWrap('= Col. Hidrostática × (1−BSW%)\nAltura da coluna ocupada por óleo')+'</th>' : '')+
+    '<th>PSI no Topo'+tipWrap(isBSW ?
+      'PSI = (H_água × ρ_água + H_óleo × ρ_óleo) × 0,1704\nFator 0,1704 psi/m/ppg = 0,052 × 3,28084' :
+      'PSI = Col_Hidro × ρ × 0,1704\nFator 0,1704 psi/m/ppg = 0,052 × 3,28084')+'</th>'+
+    '<th>Pr (psi)'+tipWrap('Pressão de formação no topo da zona\n(manual ou calculada pelo NE)')+'</th>'+
+    '<th>ΔP no Topo'+tipWrap('= PSI_topo − Pr\n+ overbalance / − underbalance')+'</th>'+
+    '<th>Grad. (psi/m)'+tipWrap('Gradiente = PSI / Topo_m\nDensidade de pressão referenciada ao topo')+'</th>'+
+    '<th>Dens. Equiv. (ppg)'+tipWrap('= Gradiente / 0,1704\n= PSI / (Topo_m × 0,1704)\nDensidade equivalente de superfície ao topo\nSem conversão para ft')+'</th>'+
+    '</tr>';
+
+  zoneRows.forEach(function(r){
+    var isOpen = r.z.open !== false;
+    var critMark = (r===critical && isOpen) ? ' ⚠' : '';
+    // Col. Hidrostática (metros): NE → topo da zona
+    var colH = Math.max(0, r.z.topoM - neM);
+    // Alturas por fluido (BSW)
+    var hA = isBSW ? +(colH * bswFrac).toFixed(2) : 0;
+    var hO = isBSW ? +(colH * (1-bswFrac)).toFixed(2) : 0;
+    // PSI no topo — em metros, sem ft
+    var psiTop = isOpen
+      ? (isBSW ? +((hA*rhoW + hO*rhoO)*0.1704).toFixed(2) : +(colH*w.fd*0.1704).toFixed(2))
+      : 0;
+    // Gradiente e Dens. Equiv. — referência ao topo da zona (profundidade total)
+    var gradPsiM = (isOpen && r.z.topoM>0) ? psiTop/r.z.topoM : 0;
+    var emw = gradPsiM / 0.1704;
+    var dv = psiTop - r.pr;
+
+    // Tooltips
+    var tipPsi = isBSW
+      ? 'Col. Hidro = '+r.z.topoM+' − '+neM.toFixed(0)+' = '+colH.toFixed(1)+' m\n'+
+        'H_água = '+colH.toFixed(1)+' × '+w.bsw+'% = '+hA+' m\n'+
+        'H_óleo = '+colH.toFixed(1)+' × '+(100-w.bsw)+'% = '+hO+' m\n'+
+        '────────────────\n'+
+        'PSI = ('+hA+'×'+rhoW+' + '+hO+'×'+rhoO+') × 0,1704\n'+
+        '= ('+(hA*rhoW).toFixed(3)+' + '+(hO*rhoO).toFixed(3)+') × 0,1704\n'+
+        '= '+psiTop.toFixed(2)+' psi'
+      : 'Col. Hidro = '+colH.toFixed(1)+' m\nρ = '+w.fd.toFixed(3)+' ppg\n'+
+        'PSI = '+colH.toFixed(1)+' × '+w.fd.toFixed(3)+' × 0,1704 = '+psiTop.toFixed(2)+' psi';
+    var tipEmw = 'Dens. Equiv. = PSI / (Topo_m × 0,1704)\n= '+psiTop.toFixed(2)+' / ('+r.z.topoM+' × 0,1704)\n= '+psiTop.toFixed(2)+' / '+(r.z.topoM*0.1704).toFixed(4)+'\n= '+emw.toFixed(3)+' ppg';
+    var tipGrad = 'Gradiente = PSI / Topo_m\n= '+psiTop.toFixed(2)+' / '+r.z.topoM+'\n= '+gradPsiM.toFixed(4)+' psi/m';
+    var tipDv = 'ΔP = PSI_topo − Pr\n= '+psiTop.toFixed(2)+' − '+r.pr.toFixed(2)+'\n= '+(dv>=0?'+':'')+dv.toFixed(2)+' psi';
+
+    var openBadge = isOpen
+      ? '<span style="background:var(--green-bg);color:var(--green-text);padding:2px 7px;border-radius:999px;font-size:10px;font-weight:600">Aberta</span>'
+      : '<span style="background:var(--red-bg);color:var(--red-text);padding:2px 7px;border-radius:999px;font-size:10px;font-weight:600">Fechada</span>';
+    var rowOpacity = isOpen ? '' : 'opacity:.55;';
+
+    zth += '<tr style="'+rowOpacity+'">'
+      +'<td class="lbl" style="font-weight:600">'+r.z.name+critMark+'</td>'
+      +'<td>'+openBadge+'</td>'
+      +'<td>'+r.z.topoM+'</td>'
+      +'<td>'+(isOpen ? colH.toFixed(1)+' m' : '—')+'</td>'
+      +(isBSW ? '<td>'+(isOpen ? hA+' m' : '—')+'</td><td>'+(isOpen ? hO+' m' : '—')+'</td>' : '')
+      +'<td>'+(isOpen ? '<strong>'+psiTop.toFixed(2)+'</strong> '+tipWrap(tipPsi) : '—')+'</td>'
+      +'<td>'+(isOpen ? r.pr.toFixed(2) : '—')+'</td>'
+      +'<td style="color:'+(isOpen ? (dv>=0?'var(--green)':'var(--red)') : 'var(--muted)')+'">'
+        +(isOpen ? (dv>=0?'+':'')+dv.toFixed(2)+tipWrap(tipDv) : '—')+'</td>'
+      +'<td>'+(isOpen ? gradPsiM.toFixed(4)+tipWrap(tipGrad) : '—')+'</td>'
+      +'<td>'+(isOpen ? '<strong>'+emw.toFixed(3)+'</strong> '+tipWrap(tipEmw) : '—')+'</td>'
+      +'</tr>';
+  });
+  html += zth + '</table>';
+
+  el.innerHTML=html;
+
+  // Sincroniza Pr calculada nas zonas (aplicar como Pf se usuário quiser — apenas mostra sugestão)
+  // NÃO sobrescreve z.fp automaticamente — o usuário pode manter manual
+}
+
+/* =====================================================
+   UCI — Master refresh
+   ===================================================== */
+function uci(){
+  var w=getWellData();
+  refreshZoneCalcs(); // atualiza Pr, col. fluido e EMW das zonas sem re-renderizar o DOM
+  renderCapSummary();
+  renderTestResults();
+  var bswTipBox=document.getElementById('bsw_tip_box');
+  var bswTipWrap=document.getElementById('bsw_tip_wrap');
+  if(bswTipBox && w.fluidType==='mistura'){
+    var rhoA=w.rhoWater||8.4, rhoO=w.rhoOil||6.8;
+    var bPct=w.bsw, oPct=100-bPct;
+    bswTipBox.textContent=
+      'ρ_mix = (BSW/100)×ρ_água + (1−BSW/100)×ρ_óleo\n'+
+      '──────────────────────────────\n'+
+      'ρ_água = '+rhoA.toFixed(2)+' ppg\n'+
+      'ρ_óleo = '+rhoO.toFixed(2)+' ppg\n'+
+      'BSW = '+bPct+'%  |  Óleo: '+oPct+'%\n'+
+      '──────────────────────────────\n'+
+      bPct+'%×'+rhoA+' = '+(bPct/100*rhoA).toFixed(3)+' ppg\n'+
+      oPct+'%×'+rhoO+' = '+(oPct/100*rhoO).toFixed(3)+' ppg\n'+
+      '──────────────────────────────\n'+
+      'ρ_mix = '+w.fd.toFixed(4)+' ppg';
+    if(bswTipWrap)bswTipWrap.style.display='';
+  } else if(bswTipBox){
+    bswTipBox.textContent='BSW disponível apenas para Óleo + Água (BSW).';
+  }
+}
+
+/* =====================================================
+   RESET — programa em branco, tipo de fluido = Água
+   ===================================================== */
+function resetAll(){
+  if(!confirm('Limpar todos os dados e iniciar programa em branco?'))return;
+
+  // Estado geral
+  cfg=null; rds=[];
+
+  // Limpa campos de texto/número
+  ['w_wellName','c_td','c_ne','c_ot','c_ib'].forEach(function(id){
+    var el=document.getElementById(id);
+    if(el)el.value='';
+  });
+  // Restaura defaults BSW
+  var rOil=document.getElementById('w_rhoOil'); if(rOil)rOil.value='6.8';
+  var rWat=document.getElementById('w_rhoWater'); if(rWat)rWat.value='8.4';
+  var bsw=document.getElementById('w_bsw'); if(bsw)bsw.value='';
+
+  // Selects: fluido = Água, resto = defaults
+  var selDefs={'w_fluidType':'','c_optype':'monitor','c_path':'anular',
+               'c_colmode':'','c_interval':'60'};
+  Object.keys(selDefs).forEach(function(id){
+    var el=document.getElementById(id);
+    if(el)el.value=selDefs[id];
+  });
+
+  // Checkbox
+  var dry=document.getElementById('c_dry');
+  if(dry)dry.checked=false;
+
+  // Sincroniza c_is (vazio)
+  var cis=document.getElementById('c_is');
+  if(cis)cis.value='';
+
+  // Zonas: vazio
+  formZones=[]; nextZoneId=1;
+
+  // Revestimento: vazio
+  casingSections=[]; nextCasingId=1;
+
+  // Coluna: vazio, desequipado
+  columnSections=[]; nextColId=1;
+  columnMode='desequipado';
+
+  // Limpa tabela de leituras
+  var tbl=document.getElementById('tbl');
+  if(tbl)tbl.innerHTML='<tr><td colspan="13" style="text-align:center;color:var(--muted);padding:16px;font-family:sans-serif">Configure e inicie a simulação.</td></tr>';
+
+  // Re-renderiza
+  updateWellName();
+  renderCasings();
+  setColumnMode('desequipado');
+  onFluidTypeChange(); // mostra/oculta blocos conforme fluido=água
+  renderZones();
+  uci();
+
+  sw(0);
+}
+
+/* Sincroniza NE de Dados do Poço → Seção 4 (Teste de Absorção) */
+function syncNE(){
+  var v=document.getElementById('c_ne').value;
+  var ft=parseFloat(v)||0;
+  var el=document.getElementById('c_ne_ft');
+  if(el)el.textContent=ft>0?'('+(ft*3.28084).toFixed(0)+' ft)':'';
+  var target=document.getElementById('c_is');
+  if(target){target.value=v;}
+  renderZones(); // re-renderiza zonas com novo NE (Topo hints + Pr)
+  uci();         // atualiza testResults e capSummary com novo NE
+}
+
+function tgl(){
+  var dry=document.getElementById('c_dry').checked;
+  document.getElementById('c_ne').disabled=dry;
+  document.getElementById('c_ib').disabled=dry;
+  renderTestResults();
+}
+
+renderCasings();renderZones();renderColumn();
+setColumnMode('desequipado');
+// Inicializa visibilidade do bloco BSW e densidade com base no tipo selecionado
+onFluidTypeChange();
+syncNE();
+uci();
+
+/* =====================================================
+   TIME FORMATTING
+   ===================================================== */
+function fmt_time(step){
+  if(!cfg)return '0h00';
+  var totalMin=step*cfg.intervalMin;
+  var h=Math.floor(totalMin/60);
+  var m=totalMin%60;
+  return h+'h'+(m<10?'0':'')+m;
+}
+function lbl_step(step){
+  if(!cfg)return 'H0';
+  if(cfg.intervalMin===60)return 'H'+step;
+  return 'T+'+fmt_time(step);
+}
+function fmt_int_label(){
+  if(!cfg)return '—';
+  var m=cfg.intervalMin;
+  if(m<60)return m+' min';
+  if(m===60)return '1 hora';
+  var h=m/60;
+  return(h===Math.floor(h)?h:h.toFixed(1))+'h';
+}
+
+
+/* =====================================================
+   INITIALIZE SIMULATION
+   ===================================================== */
+function ini(){
+  var w=getWellData();
+  if(!w.tvd||!w.fd){alert('Preencha TVD e densidade do fluido.');return;}
+  if(casingSections.length===0){alert('Adicione pelo menos uma seção de revestimento.');return;}
+  if(formZones.length===0){alert('Adicione pelo menos uma zona de formação.');return;}
+  if(columnMode==='equipado'&&columnSections.length===0){
+    alert('Poço equipado: adicione pelo menos uma seção de coluna (ou mude para Desequipado).');return;
+  }
+  var intMin=parseInt(document.getElementById('c_interval').value)||60;
+  var ot=parseFloat(document.getElementById('c_ot').value)||0;
+  var cb=columnBottomsM();
+
+  // Se zonas não tiverem fp preenchido (=0) ou se fluidType indica que queremos recalcular via NE,
+  // substitui pela Pr calculada pelo NE
+  var dry=document.getElementById('c_dry').checked;
+  var isM=dry?w.tvd:(parseFloat(document.getElementById('c_is').value)||0);
+
+  var zonesProcessed=formZones.map(function(z){
+    var clone=JSON.parse(JSON.stringify(z));
+    var prFromNE=calcResPressure(z.topoM, isM, w.fd);
+    if(!clone.fp || clone.fp<=0) clone.fp = prFromNE;
+    clone.prFromNE = prFromNE;
+    clone.depthM = z.topoM;
+    clone.open = z.open !== false; // preservar status aberta/fechada
+    return clone;
+  });
+
+  cfg={
+    td:w.tvd*3.28084, tdM:w.tvd, fd:w.fd, ot:ot,
+    wellName:w.wellName||'',
+    bsw:w.bsw, rhoWater:w.rhoWater, rhoOil:w.rhoOil,
+    fluidType:w.fluidType,
+    hasPacker:w.hasPacker, packerDepthM:w.packerDepthM,
+    refDepthM:referenceDepthM(),
+    intervalMin:intMin, path:w.path, optype:document.getElementById('c_optype').value,
+    columnMode:columnMode, columnTotalM:cb.totalM,
+    casings:JSON.parse(JSON.stringify(casingSections)),
+    zones:zonesProcessed,
+    column:JSON.parse(JSON.stringify(columnSections)),
+    neInitialM:isM
+  };
+  var ib=dry?0:(parseFloat(document.getElementById('c_ib').value)||0);
+  var is0=Math.min(isM,w.tvd)*3.28084;
+  rds=[{h:0,sl:is0,slM:is0/3.28084,bbl:ib,isInitialStatic:true}];
+  proc();
+  // ── H1 automático: NE − (OB_alvo ÷ gradiente) ──
+  // Quantos metros de fluido geram o OB alvo? Ex: 150 psi ÷ 1,431 psi/m = 104,8 m
+  var grad_mH1=0.1704*w.fd;
+  var metersH1=grad_mH1>0?ot/grad_mH1:0;
+  var h1SlM=Math.max(0,isM-metersH1);
+  rds.push({h:1,sl:h1SlM*3.28084,slM:h1SlM,bbl:0,isAutoTarget:true,obAlvo:ot,metersH1:+metersH1.toFixed(1)});
+  proc();
+  sw(1);
+  upM();
+}
+
+/* =====================================================
+   PROCESS READINGS
+   ===================================================== */
+function proc(){
+  var intH=cfg.intervalMin/60;
+  rds.forEach(function(r,i){
+    r.slM=r.sl/3.28084;
+    r.fc=Math.max(0,cfg.td-r.sl);
+    r.fcM=r.fc/3.28084;
+    r.fv=capByPath(r.slM,cfg.tdM);
+    // Ph no fundo aplicado (limite packer/TVD)
+    r.phApplied = hydroAtDepth(cfg.refDepthM, r.slM, cfg.fd);
+    // Por zona: PSI no TOPO de cada zona (coluna hidrostática do NE ao topo)
+    r.zoneData=cfg.zones.map(function(z){
+      // PSI no topo = coluna de fluido do NE ao topo da zona × gradiente
+      var phTop=hydroAtDepth(z.topoM, r.slM, cfg.fd);
+      // Para zona aberta: overbalance é medido no topo da zona
+      var open = z.open !== false;
+      var bal = phTop - z.fp;  // ΔP no topo da zona
+      // Densidade equivalente no topo (EMW)
+      var topoFt = z.topoM * 3.28084;
+      var emw = z.topoM>0 ? phTop/(0.1704*z.topoM) : 0; // metros
+      return{name:z.name,depthM:z.topoM,topoM:z.topoM,baseM:z.baseM,fp:z.fp,
+             hp:phTop, phTop:phTop, bal:+bal.toFixed(1), open:open, emw:+emw.toFixed(3)};
+    });
+    // Zona crítica = zona ABERTA com menor ΔP
+    var openZones=r.zoneData.filter(function(z){return z.open;});
+    var critPool=openZones.length>0?openZones:r.zoneData;
+    var crit=critPool.reduce(function(a,b){return a.bal<b.bal?a:b;});
+    r.critZone=crit.name;
+    r.hp=crit.hp;
+    r.bal=crit.bal;
+    r.fp=crit.fp;
+    if(i===0||r.isAutoTarget){r.abs=0;r.ar=0;}
+    else{
+      var prev=rds[i-1];
+      var dv=r.fv-prev.fv;
+      r.abs=+(r.bbl-dv).toFixed(3);
+      r.ar=+(r.abs/intH).toFixed(3);
+    }
+  });
+}
+
+/* =====================================================
+   PROJECTION (regressão linear)
+   ===================================================== */
+function calcProj(){
+  if(rds.length<2)return null;
+  var obs=rds.filter(function(r){return r.h>0&&!r.isAutoTarget;});
+  var intH=cfg.intervalMin/60;
+  var xs=obs.map(function(r){return r.h*intH;});
+  var ys=obs.map(function(r,i){return obs.slice(0,i+1).reduce(function(a,b){return a+Math.max(0,b.abs);},0);});
+  var sx=xs.reduce(function(a,b){return a+b;},0);
+  var sy=ys.reduce(function(a,b){return a+b;},0);
+  var sxy=xs.reduce(function(a,b,i){return a+b*ys[i];},0);
+  var sx2=xs.reduce(function(a,b){return a+b*b;},0);
+  var slope=(n*sxy-sx*sy)/(n*sx2-sx*sx+1e-9);
+  var intercept=(sy-slope*sx)/n;
+  return{slope:slope,intercept:intercept,ratePer1h:+slope.toFixed(3)};
+}
+function avgA(){
+  var last=rds.slice(-3).filter(function(r){return r.h>0&&!r.isAutoTarget;});
+  if(!last.length)return 0;
+  return last.reduce(function(a,b){return a+Math.max(0,b.ar);},0)/last.length;
+}
+
+/* =====================================================
+   ADD / UNDO READING
+   ===================================================== */
+function add(){
+  if(!cfg){alert('Inicie a simulação primeiro.');return;}
+  var slM=parseFloat(document.getElementById('n_sl').value);
+  if(isNaN(slM)||slM<0||slM>cfg.tdM){alert('Sonolog inválido (0 a '+cfg.tdM+' m).');return;}
+  var sl=slM*3.28084;
+  var bbl=parseFloat(document.getElementById('n_bbl').value)||0;
+  rds.push({h:rds.length,sl:sl,slM:slM,bbl:bbl});
+  proc();
+  document.getElementById('n_sl').value='';updFt('n_sl');
+  document.getElementById('n_bbl').value='0';
+  upM();
+}
+function undo(){
+  if(rds.length<=2)return; // protege H0 e H1 automáticos
+  rds.pop();proc();upM();
+}
+
+/* =====================================================
+   FINAL RESULTS — Taxa de Absorção + Overbalance Proposto
+   ===================================================== */
+/* =====================================================
+   BANNER H0→H1 — Volume inicial a injetar
+   ===================================================== */
+function renderH1Banner(){
+  var el=document.getElementById('h1_banner');
+  if(!el||!cfg)return;
+  // Só mostra enquanto o usuário ainda não adicionou leituras manuais (H2+)
+  var manualRds=rds.filter(function(r){return !r.isInitialStatic&&!r.isAutoTarget;});
+  if(manualRds.length>0){el.style.display='none';return;}
+
+  var h0=rds.filter(function(r){return r.isInitialStatic;})[0];
+  var h1=rds.filter(function(r){return r.isAutoTarget;})[0];
+  if(!h0||!h1||!cfg.ot){el.style.display='none';return;}
+
+  var pathLabels={anular:'Anular',coluna:'Coluna',ambos:'Col. + Anular'};
+  var pathLbl=pathLabels[cfg.path]||'Anular';
+  var grad_m=0.1704*cfg.fd;
+  var metersNeeded=grad_m>0?cfg.ot/grad_m:0;
+  // Volume pela via selecionada: de H1 até H0 (preencher esse intervalo)
+  var volBbl=capByPath(h1.slM, h0.slM);
+
+  var tipH1='━━ VOLUME H0 → H1 ━━\n\n'+
+    'Gradiente do fluido:\n'+
+    '  ρ × 0,1704 = '+cfg.fd.toFixed(3)+' × 0,1704 = '+grad_m.toFixed(4)+' psi/m\n\n'+
+    'Metros de desnível necessários:\n'+
+    '  OB_alvo / gradiente = '+cfg.ot+' / '+grad_m.toFixed(4)+' = '+metersNeeded.toFixed(1)+' m\n\n'+
+    'Nível Estático (h₀):  '+h0.slM.toFixed(0)+' m\n'+
+    'Meta H1:              '+h1.slM.toFixed(1)+' m\n'+
+    'Desnível:             '+metersNeeded.toFixed(1)+' m\n\n'+
+    'Via: '+pathLbl+'\n'+
+    'Volume = cap('+h1.slM.toFixed(0)+'m → '+h0.slM.toFixed(0)+'m)\n'+
+    '       = '+volBbl.toFixed(3)+' bbl';
+
+  el.style.display='block';
+  el.innerHTML=
+    '<div style="background:linear-gradient(135deg,var(--amber-bg) 0%,var(--card) 100%);border:1.5px solid rgba(45,106,79,.45);border-radius:12px;padding:16px 20px;margin-bottom:14px">'+
+      '<p class="sec" style="margin-bottom:10px">💉 Volume a Injetar — H0 → H1 (Atingir OB Alvo)</p>'+
+      '<div style="display:grid;grid-template-columns:auto 1fr;gap:6px 24px;align-items:center">'+
+
+        '<div style="font-size:11px;color:var(--muted)">Nível Estático h₀</div>'+
+        '<div style="font-family:monospace;font-weight:600">'+h0.slM.toFixed(0)+' m</div>'+
+
+        '<div style="font-size:11px;color:var(--muted)">Meta H1 (OB +'+cfg.ot+' psi)</div>'+
+        '<div style="font-family:monospace;font-weight:600">'+h1.slM.toFixed(1)+' m</div>'+
+
+        '<div style="font-size:11px;color:var(--muted)">Desnível necessário</div>'+
+        '<div style="font-family:monospace;font-weight:600">'+metersNeeded.toFixed(1)+' m  <span style="font-size:10px;color:var(--muted);font-weight:400">('+cfg.ot+' psi ÷ '+grad_m.toFixed(4)+' psi/m)</span></div>'+
+
+        '<div style="font-size:11px;color:var(--muted)">Via</div>'+
+        '<div style="font-family:monospace;font-weight:600">'+pathLbl+'</div>'+
+
+      '</div>'+
+      '<div style="margin-top:14px;display:flex;align-items:baseline;gap:10px">'+
+        '<span style="font-size:42px;font-weight:700;font-family:monospace;color:var(--amber)">'+volBbl.toFixed(2)+'</span>'+
+        '<span style="font-size:16px;color:var(--muted)">barris a injetar</span>'+
+        tipWrap(tipH1)+
+      '</div>'+
+      '<p style="font-size:11px;color:var(--warn-text);margin-top:8px">⚠ Não considera absorção durante o bombeio. Monitore o Sonolog a cada intervalo e adicione leituras (H2, H3…) para ajustar.</p>'+
+    '</div>';
+}
+
+function renderFinalResults(){
+  var el=document.getElementById('finalResults');
+  if(!el||!cfg)return;
+  var obs=rds.filter(function(r){return r.h>0&&!r.isAutoTarget;});
+  if(obs.length<1){el.style.display='none';return;}
+  el.style.display='block';
+
+  var proj=calcProj();
+  var rate = proj?proj.ratePer1h:avgA();
+  var lat=rds[rds.length-1];
+  var totalAbs=obs.reduce(function(a,r){return a+Math.max(0,r.abs);},0);
+  var totalInj=rds.reduce(function(a,r){return a+r.bbl;},0);
+
+  // Overbalance proposto = OB efetivo atual na zona crítica (Ph aplicado - Pr)
+  var obAtual = lat.bal; // já é phApplied - fp
+  // Recomendação: se rate alta → sugerir reduzir OB; se rate baixa → OB está OK
+  var suggestion;
+  var sugColor='var(--amber-text)';
+  var sugBg='var(--amber-bg)';
+  if(rate<=0.1){
+    suggestion='Absorção muito baixa ('+rate.toFixed(2)+' bbl/h). Poço praticamente não absorve — OB atual ('+obAtual.toFixed(0)+' psi) está compatível. Considere manter o mesmo diferencial.';
+    sugColor='var(--green-text)';sugBg='var(--green-bg)';
+  }else if(rate<=1.0){
+    suggestion='Absorção moderada ('+rate.toFixed(2)+' bbl/h). OB efetivo atual = '+obAtual.toFixed(0)+' psi está dentro do esperado para squeeze/teste. Monitorar tendência.';
+  }else if(rate<=3.0){
+    suggestion='Absorção elevada ('+rate.toFixed(2)+' bbl/h). Considere reduzir o OB proposto para ~'+Math.max(50,obAtual*0.5).toFixed(0)+' psi e observar resposta.';
+    sugColor='var(--red-text)';sugBg='var(--red-bg)';
+  }else{
+    suggestion='⚠ Absorção ALTA ('+rate.toFixed(2)+' bbl/h). Possível fratura/canalização. Recomendado reduzir drasticamente OB ou interromper injeção para avaliação.';
+    sugColor='var(--red-text)';sugBg='var(--red-bg)';
+  }
+
+  var grad_m=0.1704*cfg.fd; // psi/m metros
+  // Volume perdido por hora em bbl / taxa de enchimento metros por hora
+  var lossMeters = grad_m>0 ? (rate/avgCapPerFt()/3.28084) : 0; // equivalente em metros de descida do nível se não repor
+
+  var intH=cfg.intervalMin/60;
+  var volNextInterval = rate*intH;
+  var intLbl=fmt_int_label();
+
+  var html='<div class="result-grid">'+
+    '<div class="result-card hot">'+
+      '<div class="result-lbl">Taxa de Absorção (atual)</div>'+
+      '<div class="result-val">'+rate.toFixed(3)+'</div>'+
+      '<div class="result-unit">bbl/h · '+obs.length+' leitura(s)</div>'+
+    '</div>'+
+    '<div class="result-card hot">'+
+      '<div class="result-lbl">Overbalance Efetivo (Ph − Pr)</div>'+
+      '<div class="result-val" style="color:'+(obAtual>=0?'var(--green)':'var(--red)')+'">'+(obAtual>=0?'+':'')+obAtual.toFixed(0)+'</div>'+
+      '<div class="result-unit">psi · zona '+lat.critZone+'</div>'+
+    '</div>'+
+    '<div class="result-card cool">'+
+      '<div class="result-lbl">Volume Próximo Intervalo ('+intLbl+')</div>'+
+      '<div class="result-val">'+volNextInterval.toFixed(2)+'</div>'+
+      '<div class="result-unit">bbl esperados de absorção</div>'+
+    '</div>'+
+    '<div class="result-card cool">'+
+      '<div class="result-lbl">Total Absorvido</div>'+
+      '<div class="result-val">'+totalAbs.toFixed(2)+'</div>'+
+      '<div class="result-unit">bbl · injetado '+totalInj.toFixed(2)+' bbl</div>'+
+    '</div>'+
+    '</div>'+
+    '<div style="background:'+sugBg+';color:'+sugColor+';border-radius:8px;padding:12px 14px;font-size:12px;line-height:1.6;margin-top:8px"><strong>Overbalance Proposto:</strong> '+suggestion+'</div>';
+
+  document.getElementById('finalResultsContent').innerHTML=html;
+}
+
+/* =====================================================
+   UPDATE MONITORING
+   ===================================================== */
+function upM(){
+  if(!cfg)return;
+  var lat=rds[rds.length-1];
+  var intH=cfg.intervalMin/60;
+  var intLbl=fmt_int_label();
+  var pathLabels={anular:'Anular',coluna:'Coluna',ambos:'Col. + Anular'};
+
+  document.getElementById('hlbl').textContent='Registrar Leitura Sonolog (manual) — '+lbl_step(rds.length);
+
+  var thTime=cfg.intervalMin===60?'Hora':'Tempo';
+  var theadHtml='<tr><th>'+thTime+'</th><th>Sonolog (m)</th><th>Col. Fluido (m)</th>'+
+    '<th>Vol. (bbl)</th><th>Injetado (bbl)</th><th>Absorção (bbl)</th><th>Taxa (bbl/h)</th>';
+  cfg.zones.forEach(function(z){
+    var isOpen=z.open!==false;
+    var bg=isOpen?'var(--amber-bg)':'var(--card2)';
+    var tc=isOpen?'var(--amber-text)':'var(--muted)';
+    theadHtml+='<th style="background:'+bg+';color:'+tc+'">PSI Topo '+z.name+(isOpen?'':' 🔒')+'</th>'+
+      '<th style="background:'+bg+';color:'+tc+'">ΔP '+z.name+'</th>'+
+      '<th style="background:'+bg+';color:'+tc+'">ρ equiv. '+z.name+' (ppg)</th>';
+  });
+  theadHtml+='<th>Status</th></tr>';
+  document.getElementById('thead_main').innerHTML=theadHtml;
+
+  // ── Tabela de leituras — renderizada PRIMEIRO para garantir exibição ──
+  var tblRows=rds.slice().reverse().map(function(r){
+    var b=r.bal||0;
+    var rowcls=b>cfg.ot?'over-row':b<0?'under-row':'';
+    var bs=b>cfg.ot?'<span class="bdg bo" style="font-size:10px;padding:2px 7px">over</span>':
+      b>0?'<span class="bdg bw" style="font-size:10px;padding:2px 7px">ok</span>':
+      '<span class="bdg bu" style="font-size:10px;padding:2px 7px">under</span>';
+    var timeLbl = r.isInitialStatic
+      ? lbl_step(r.h)+'<br><span style="font-size:9px;font-weight:400;color:var(--muted)">Nível Estático (h₀)</span>'
+      : r.isAutoTarget
+        ? lbl_step(r.h)+'<br><span style="font-size:9px;font-weight:600;color:var(--amber)">⊙ Alvo OB +'+r.obAlvo+' psi</span>'
+        : lbl_step(r.h);
+    var rowStyle=r.isAutoTarget?' style="opacity:.8;background:rgba(45,106,79,.07)"':'';
+    var row='<tr class="'+rowcls+'"'+rowStyle+'>'+
+      '<td>'+timeLbl+'</td>'+
+      '<td>'+(r.slM!=null?r.slM.toFixed(0):'—')+'</td>'+
+      '<td>'+(r.fcM!=null?r.fcM.toFixed(0):'—')+'</td>'+
+      '<td>'+(r.fv!=null?r.fv.toFixed(2):'—')+'</td>'+
+      '<td>'+(r.isAutoTarget?'<span style="color:var(--amber);font-size:10px">— meta —</span>':(r.bbl||0).toFixed(1))+'</td>'+
+      '<td>'+(r.h===0||r.isAutoTarget?'—':r.abs!=null?r.abs.toFixed(2):'—')+'</td>'+
+      '<td>'+(r.h===0||r.isAutoTarget?'—':r.ar!=null?r.ar.toFixed(3)+' bbl/h':'—')+'</td>';
+    if(r.zoneData){r.zoneData.forEach(function(zd){
+      var isOpen=zd.open!==false;
+      var zBal=zd.bal||0;
+      var zColor=isOpen?(zBal>=cfg.ot?'var(--green)':zBal>=0?'var(--amber)':'var(--red)'):'var(--muted)';
+      row+='<td style="opacity:'+(isOpen?'1':'.5')+'">'+(zd.hp!=null?zd.hp.toFixed(0):'—')+'</td>'+
+        '<td style="color:'+zColor+';font-weight:600;opacity:'+(isOpen?'1':'.5')+'">'+(isOpen?(zBal>=0?'+':'')+zBal.toFixed(0):'—')+'</td>'+
+        '<td style="opacity:'+(isOpen?'1':'.5')+'">'+(zd.emw!=null?zd.emw.toFixed(2):'—')+'</td>';
+    });}else{cfg.zones.forEach(function(){row+='<td>—</td><td>—</td><td>—</td>';});}
+    row+='<td>'+bs+'</td></tr>';
+    return row;
+  }).join('');
+  document.getElementById('tbl').innerHTML=tblRows;
+
+  var intBar=document.getElementById('int_bar');
+  intBar.style.display='grid';
+  document.getElementById('int_lbl').textContent=intLbl;
+  document.getElementById('int_path').textContent=pathLabels[cfg.path];
+  document.getElementById('int_optype').textContent=cfg.optype==='equip'?'Equipagem':cfg.optype==='desequip'?'Desequipagem':'Monitoramento';
+  document.getElementById('int_next').textContent=lbl_step(rds.length);
+  document.getElementById('int_total').textContent=fmt_time(lat.h);
+
+  var bal=lat.bal;
+  var badge=bal>cfg.ot?'<span class="bdg bo">▲ OVERBALANCE</span>':
+    bal>0?'<span class="bdg bw">≈ BALANCEADO</span>':
+    '<span class="bdg bu">▼ UNDERBALANCE</span>';
+  var labelReading = lat.isInitialStatic?'Nível Estático Registrado (h₀)':lat.isAutoTarget?'Meta H1 — Alvo OB +'+lat.obAlvo+' psi':'Leitura Atual';
+
+  // Tooltips para os mc cards
+  var grad_mc=0.052*cfg.fd*3.28084;
+  var colM_mc=Math.max(0,cfg.refDepthM-lat.slM);
+  var tipSon='Sonolog medido pela via selecionada.\nNível do topo do fluido no poço.\nSonolog menor → mais fluido → mais pressão.\n\nSonolog: '+lat.slM.toFixed(0)+' m';
+  var tipCol='Coluna de fluido = TVD − Sonolog\n= '+cfg.tdM.toFixed(0)+' − '+lat.slM.toFixed(0)+'\n= '+lat.fcM.toFixed(0)+' m';
+  var tipHp='Ph = ρ × col_m × 0,1704\n= '+cfg.fd.toFixed(3)+' ppg × '+colM_mc.toFixed(1)+' m × 0,1704\n= '+lat.hp.toFixed(2)+' psi\n\nRef: '+cfg.refDepthM.toFixed(0)+' m '+(cfg.hasPacker?'(packer)':'(TVD)');
+  var tipBal='ΔP = Ph_fundo − Pr_zona_crítica\n= '+lat.hp.toFixed(0)+' − '+lat.fp.toFixed(0)+'\n= '+(bal>=0?'+':'')+bal.toFixed(0)+' psi\n\nZona crítica: '+lat.critZone+'\n'+(bal>=cfg.ot?'▲ OVERBALANCE':bal>=0?'≈ BALANCEADO':'▼ UNDERBALANCE');
+
+  // Cards Pr por zona (monitoramento)
+  var zonePrMcCards=lat.zoneData.map(function(zd){
+    if(zd.open===false)return '';
+    var isCrit=(zd.name===lat.critZone);
+    var tipPrZ='Pr ('+zd.name+') = Ph no topo desta zona\n= col_fluido × ρ × 0,1704\n= '+Math.max(0,zd.topoM-lat.slM).toFixed(1)+' m × '+cfg.fd.toFixed(3)+' × 0,1704\n= '+zd.hp.toFixed(2)+' psi (Ph topo)\nPr manual: '+zd.fp.toFixed(2)+' psi';
+    return '<div class="mc has-tip" style="position:relative;border-left:3px solid '+(isCrit?'var(--red)':'var(--amber)')+'">'+
+      tipWrap(tipPrZ)+
+      '<div class="ml">Pr '+zd.name+(isCrit?' ⚠':'')+'</div>'+
+      '<div class="mv" style="font-size:16px;color:'+(isCrit?'var(--red)':'var(--amber)')+'">'+zd.fp.toFixed(0)+'</div>'+
+      '<div class="mu">psi · topo '+zd.topoM+' m</div></div>';
+  }).join('');
+
+  document.getElementById('cards').innerHTML=
+    '<p class="sec">Situação — '+labelReading+' · '+lbl_step(lat.h)+'</p>'+
+    '<div class="mg">'+
+    '<div class="mc has-tip" style="position:relative">'+tipWrap(tipSon)+'<div class="ml">Nível Sonolog</div><div class="mv">'+lat.slM.toFixed(0)+'</div><div class="mu">m (= '+lat.sl.toFixed(0)+' ft)</div></div>'+
+    '<div class="mc has-tip" style="position:relative">'+tipWrap(tipCol)+'<div class="ml">Coluna de Fluido</div><div class="mv">'+lat.fcM.toFixed(0)+'</div><div class="mu">m (= '+lat.fc.toFixed(0)+' ft)</div></div>'+
+    zonePrMcCards+
+    '<div class="mc has-tip" style="position:relative">'+tipWrap(tipBal)+'<div class="ml">Δ Pressão (zona crit.)</div>'+
+    '<div class="mv '+(bal>=0?'st':'sd')+'">'+(bal>=0?'+':'')+bal.toFixed(0)+'</div>'+
+    '<div class="mu">psi · '+lat.critZone+'</div></div>'+
+    '</div>'+
+    '<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:8px">'+
+    badge+
+    '<span style="font-size:11px;color:var(--muted)">Via: '+pathLabels[cfg.path]+' · Intervalo: '+intLbl+'</span></div>';
+
+  document.getElementById('zone_status').style.display='block';
+  document.getElementById('zone_cards').innerHTML=lat.zoneData.map(function(zd){
+    var isOpen=zd.open!==false;
+    var zBadge=!isOpen
+      ? '<span style="background:var(--card2);color:var(--muted);font-size:10px;padding:2px 7px;border-radius:999px;font-weight:600">Fechada</span>'
+      : zd.bal>cfg.ot?'<span class="bdg bo" style="font-size:10px;padding:2px 7px">over</span>'
+      : zd.bal>0?'<span class="bdg bw" style="font-size:10px;padding:2px 7px">ok</span>'
+      : '<span class="bdg bu" style="font-size:10px;padding:2px 7px">under</span>';
+    var emwStr=zd.emw>0?(' · EMW='+zd.emw.toFixed(3)+' ppg'):''; // metros
+    return '<div style="display:inline-flex;gap:12px;align-items:center;padding:6px 12px;border-radius:8px;background:var(--card);border:0.5px solid '+(isOpen?'var(--border)':'rgba(163,45,45,.2)')+';margin:4px;opacity:'+(isOpen?'1':'.6')+'">'+
+      '<strong style="font-size:12px">'+zd.name+'</strong>'+
+      '<span style="font-size:11px;color:var(--muted)">'+zd.topoM+'–'+zd.baseM+'m · Pr='+zd.fp+' psi · PSI topo='+zd.hp.toFixed(0)+' psi'+emwStr+' · Δ='+(isOpen?(zd.bal>=0?'+':'')+zd.bal.toFixed(0)+' psi':'—')+'</span>'+
+      zBadge+'</div>';
+  }).join('');
+
+  // ── RECOMENDAÇÃO OPERACIONAL — 4 estados ──
+  var crit=lat.zoneData.reduce(function(a,b){return a.bal<b.bal?a:b;});
+  var dpAtual=crit.bal;
+  var joOBtgtRec=cfg.ot;
+  var joOBminRec=Math.max(30,Math.round(joOBtgtRec*0.50));
+  var grad_m=0.1704*cfg.fd;
+  var aa=avgA();
+  var absInNext=aa*intH;
+  var capPF=avgCapPerFt();
+
+  /* Helper: detalha a capacidade do intervalo fromM→toM pela via atual */
+  function fmtCapInterval(fromM, toM){
+    if(fromM>=toM) return '  (intervalo nulo)';
+    var inner=buildInnerIntervals();
+    var pathV=cfg.path||'anular';
+    var lines=[];
+    var totalVol=0;
+    casingSections.forEach(function(cs){
+      inner.forEach(function(ii){
+        var top=Math.max(fromM,cs.fromM,ii.fromM);
+        var bot=Math.min(toM,cs.toM,ii.toM);
+        if(bot<=top)return;
+        var lenM=bot-top;
+        var lenFt=lenM*3.28084;
+        var volAn=0,volCol=0;
+        if(pathV!=='coluna'){
+          var capAnFt=Math.max(0,(cs.ci*cs.ci-ii.od*ii.od)/1029.4);
+          volAn=capAnFt*lenFt;
+        }
+        if((pathV==='coluna'||pathV==='ambos')&&ii.od>0){
+          var capColFt=(ii.id*ii.id)/1029.4;
+          volCol=capColFt*lenFt;
+        }
+        var vol=pathV==='coluna'?volCol:(pathV==='ambos'?volAn+volCol:volAn);
+        totalVol+=vol;
+        var odPart=ii.od>0?' − '+ii.od.toFixed(3)+'²':'';
+        var formula=pathV==='coluna'
+          ? ii.id.toFixed(3)+'² / 1029,4'
+          : '('+cs.ci.toFixed(3)+'²'+odPart+') / 1029,4';
+        lines.push('  ['+top+'–'+bot+'m | '+lenM.toFixed(0)+'m / '+lenFt.toFixed(0)+'ft]\n'+
+                   '  '+formula+' × '+lenFt.toFixed(0)+'ft = '+vol.toFixed(4)+' bbl');
+      });
+    });
+    lines.push('  ──────────────\n  TOTAL = '+totalVol.toFixed(4)+' bbl');
+    return lines.join('\n');
+  }
+
+  // Esconde todos os boxes
+  document.getElementById('rec-box-injetar').style.display='none';
+  document.getElementById('rec-box-manter').style.display='none';
+  document.getElementById('rec-box-aguardar').style.display='none';
+  document.getElementById('recb').style.display='block';
+
+  if(dpAtual > joOBtgtRec){
+    // ── ESTADO 1: SOBREPRESSÃO — NÃO INJETAR ──
+    var excesso=dpAtual-joOBtgtRec;
+    var mExcesso=excesso/grad_m;
+    var timeToWindow=aa>0.01?(mExcesso*3.28084*capPF)/aa:null;
+    var box=document.getElementById('rec-box-aguardar');
+    box.style.display='block';
+    document.getElementById('rec_v_aguardar').textContent=
+      'ΔP atual: +'+dpAtual.toFixed(0)+' psi  (excesso: +'+excesso.toFixed(0)+' psi acima do alvo)';
+    var dParts=['Suspender injeção imediatamente — poço '+excesso.toFixed(0)+' psi acima da janela operacional.'];
+    dParts.push('Aguardar absorção natural reduzir ΔP até ≤ +'+joOBtgtRec+' psi antes de retomar bombeio.');
+    if(timeToWindow&&timeToWindow>0)
+      dParts.push('Estimativa: ~'+timeToWindow.toFixed(1)+'h para retornar à janela (taxa abs. média: '+aa.toFixed(3)+' bbl/h).');
+    else
+      dParts.push('Registre mais leituras para estimar tempo de retorno à janela.');
+    document.getElementById('rec_d_aguardar').innerHTML=dParts.join('<br>→ ');
+
+  } else if(dpAtual >= joOBminRec){
+    // ── ESTADO 2: DENTRO DA JANELA — só compensar absorção ──
+    var volManter=Math.max(0,absInNext);
+    var tipManter=
+      '━━ MANTER POSIÇÃO NA JANELA ━━\n'+
+      '\nΔP atual: +'+dpAtual.toFixed(0)+' psi (janela: +'+joOBminRec+' … +'+joOBtgtRec+' psi)\n'+
+      '\nCOMPENSAÇÃO DE ABSORÇÃO\n'+
+      '  Taxa méd. = '+aa.toFixed(4)+' bbl/h × '+intH.toFixed(2)+' h\n'+
+      '  V = '+absInNext.toFixed(3)+' bbl\n'+
+      '\nNão é necessário elevar o nível — apenas\nrepor o que a formação absorveu.';
+    var box2=document.getElementById('rec-box-manter');
+    box2.style.display='block';
+    document.getElementById('rec_v_manter').innerHTML=volManter.toFixed(2)+tipWrap(tipManter);
+    var mParts=['ΔP em +'+dpAtual.toFixed(0)+' psi → dentro da janela (min +'+joOBminRec+' / alvo +'+joOBtgtRec+' psi).'];
+    if(aa>0.01) mParts.push('Injetar '+volManter.toFixed(2)+' bbl para compensar absorção de '+aa.toFixed(3)+' bbl/h × '+intLbl+'.');
+    else mParts.push('Absorção mínima — monitorar sem injetar no próximo intervalo.');
+    document.getElementById('rec_d_manter').innerHTML=mParts.join('<br>→ ');
+
+  } else {
+    // ── ESTADOS 3 e 4: ABAIXO DA JANELA (colapso ou sub-mínimo) — INJETAR ──
+    var grad_m_inj = 0.1704 * cfg.fd; // psi/m do fluido de injeção (referência)
+
+    // ── Cálculo POR ZONA — gradiente próprio de cada zona (Pr / Topo) ──
+    var volMax = 0;
+    var neM_cur = lat.slM; // nível estático atual em metros
+    var zoneReqs = lat.zoneData.map(function(zd){
+      if(!zd.open) return null;
+      // Gradiente da zona: pressão de formação por metro de TVD
+      var gradZ = zd.topoM > 0 ? zd.fp / zd.topoM : 0.1704*cfg.fd;
+      var tgtZ = dpAtual < 0
+        ? zd.fp + joOBminRec
+        : zd.fp + joOBtgtRec;
+      var defZ = Math.max(0, tgtZ - zd.hp);
+      var mZ   = gradZ > 0 ? defZ / gradZ : 0;
+      // Volume REAL: capacidade da seção exata a preencher (NE_novo → NE_atual)
+      var neNovo = Math.max(0, neM_cur - mZ);
+      var volZ = capByPath(neNovo, neM_cur);
+      if(volZ > volMax) volMax = volZ;
+      return {name:zd.name, fp:zd.fp, hp:zd.hp, tgt:tgtZ, def:defZ,
+              gradZ:gradZ, m:mZ, neNovo:neNovo, vol:volZ};
+    }).filter(function(x){return x!==null;});
+
+    // Tooltip com breakdown por zona
+    var tipZones = '';
+    zoneReqs.forEach(function(zr, idx){
+      var capDetail = fmtCapInterval(zr.neNovo, neM_cur);
+      tipZones +=
+        '\n─── ZONA '+(idx+1)+': '+zr.name+' ───\n'+
+        '   Grad. zona = Pr/Topo = '+zr.fp.toFixed(2)+'/'+(zr.fp/zr.gradZ).toFixed(0)+' = '+zr.gradZ.toFixed(4)+' psi/m\n'+
+        '   Pr = '+zr.fp.toFixed(0)+' psi  |  Ph atual = '+zr.hp.toFixed(0)+' psi\n'+
+        '   Alvo = Pr + OB = '+zr.fp.toFixed(0)+' + '+joOBtgtRec+' = '+zr.tgt.toFixed(0)+' psi\n'+
+        '   Déficit = '+zr.def.toFixed(0)+' psi\n'+
+        '   Metros = '+zr.def.toFixed(0)+' / '+zr.gradZ.toFixed(4)+' = '+zr.m.toFixed(1)+' m\n'+
+        '   NE_novo = '+neM_cur.toFixed(0)+' − '+zr.m.toFixed(1)+' = '+zr.neNovo.toFixed(0)+' m\n'+
+        '\n   CAP. ('+cfg.path+') — '+zr.neNovo.toFixed(0)+' → '+neM_cur.toFixed(0)+' m:\n'+
+        capDetail+'\n';
+    });
+
+    var total = volMax + absInNext;
+    var titleTxt = dpAtual < 0
+      ? '🚨 Colapso (Underbalance) — Injeção Urgente'
+      : '⚠ Abaixo da Janela — Retomar Injeção';
+    document.getElementById('rec_title_inj').textContent = titleTxt;
+
+    var tipRec =
+      '━━ RECOMENDAÇÃO DE INJEÇÃO ━━\n'+
+      (dpAtual<0 ? '\n⚠ COLAPSO: Ph < Pr — risco de influxo!\n' : '\n⚠ Sub-mínimo: ΔP < '+joOBminRec+' psi\n')+
+      tipZones+
+      '\nVOLUME CONTROLANTE (maior necessidade): '+volMax.toFixed(3)+' bbl\n'+
+      '\nCOMPENSAÇÃO ABSORÇÃO\n'+
+      '   V_abs = '+aa.toFixed(4)+' × '+intH.toFixed(2)+' h = '+absInNext.toFixed(3)+' bbl\n'+
+      '\nTOTAL A INJETAR\n'+
+      '   V_total = '+volMax.toFixed(3)+' + '+absInNext.toFixed(3)+' = '+total.toFixed(2)+' bbl';
+
+    document.getElementById('rec-box-injetar').style.display='block';
+    document.getElementById('rec_v').innerHTML=total.toFixed(2)+tipWrap(tipRec);
+
+    var iParts=[];
+    if(dpAtual<0)
+      iParts.push('🚨 COLAPSO: Ph < Pr na zona '+crit.name+'. Risco de influxo!');
+    else
+      iParts.push('ΔP = +'+dpAtual.toFixed(0)+' psi — abaixo do mínimo (+'+joOBminRec+' psi).');
+    zoneReqs.forEach(function(zr){
+      iParts.push(zr.name+': grad '+zr.gradZ.toFixed(4)+' psi/m → déficit '+zr.def.toFixed(0)+' psi → '+zr.m.toFixed(1)+' m → '+zr.vol.toFixed(2)+' bbl');
+    });
+    if(aa>0.01) iParts.push('+ absorção: '+aa.toFixed(3)+' bbl/h × '+intLbl+' = '+absInNext.toFixed(2)+' bbl');
+    iParts.push('<strong>Total a injetar: '+total.toFixed(2)+' bbl</strong>');
+    document.getElementById('rec_d').innerHTML=iParts.join('<br>→ ');
+  }
+
+  // Pr do reservatório calculada pelo Nível Estático
+  var neM_cur=lat.slM; // nível sonolog atual
+  var prNE_panel=document.getElementById('pr_ne_panel');
+  if(prNE_panel){
+    var prFromNE_zones=cfg.zones.map(function(z){
+      var colM=Math.max(0,z.topoM-cfg.neInitialM);
+      var pr=(0.052*cfg.fd*colM*3.28084);
+      return {name:z.name, topoM:z.topoM, pr:pr.toFixed(0), colM:colM.toFixed(1)};
+    });
+    var prHtml='<div style="margin-top:4px;display:flex;flex-wrap:wrap;gap:8px">';
+    prFromNE_zones.forEach(function(z){
+      var tipPrNE=
+        '━━ Pr PELO NÍVEL ESTÁTICO (h₀) ━━\n'+
+        '\n  Pr = 0,052 × ρ × h_col × 3,28084\n'+
+        '  Zona '+z.name+': topo = '+z.topoM+' m\n'+
+        '  h₀ (NE) = '+cfg.neInitialM.toFixed(0)+' m\n'+
+        '  Coluna de fluido: '+z.topoM+' − '+cfg.neInitialM.toFixed(0)+' = '+z.colM+' m\n'+
+        '  = 0,052 × '+cfg.fd.toFixed(2)+' × '+z.colM+' m × 3,28084\n'+
+        '  Pr ≈ '+z.pr+' psi\n'+
+        '\n  (pressão em equilíbrio com h₀ no topo da zona)';
+      prHtml+='<div style="padding:7px 12px;border-radius:8px;background:var(--card);border:0.5px solid var(--border);font-size:12px">'+
+        '<span style="color:var(--muted);font-size:10px;text-transform:uppercase;letter-spacing:.05em">Pr '+z.name+'</span>'+tipWrap(tipPrNE)+
+        '<br><span style="font-size:18px;font-weight:700;font-family:monospace;color:var(--amber)">'+z.pr+'</span> psi</div>';
+    });
+    prHtml+='</div>';
+    prNE_panel.innerHTML=
+      '<p class="lbl" style="margin-bottom:4px">Pr Reservatório — pelo Nível Estático h₀ = '+cfg.neInitialM.toFixed(0)+' m</p>'+prHtml;
+    prNE_panel.style.display='block';
+  }
+
+  var proj=calcProj();
+  var pp=document.getElementById('proj_panel');
+  if(proj&&rds.length>=2){
+    pp.style.display='block';
+    var nObs=rds.filter(function(r){return r.h>0&&!r.isAutoTarget;}).length;
+    var tipProj=
+      '━━ PROJEÇÃO DE ABSORÇÃO ━━\n'+
+      '\nRegressão linear (mínimos quadrados)\n'+
+      'sobre '+nObs+' leitura(s) observada(s)\n'+
+      '\n  y = a·x + b\n'+
+      '  x = tempo acumulado (h)\n'+
+      '  y = absorção acumulada (bbl)\n'+
+      '\n  Inclinação a = '+proj.ratePer1h.toFixed(4)+' bbl/h\n'+
+      '  Intercepto b = '+proj.intercept.toFixed(4)+' bbl\n'+
+      '\nProjeções:\n'+
+      '  Em 4h:  '+(proj.ratePer1h*4).toFixed(2)+' bbl\n'+
+      '  Em 8h:  '+(proj.ratePer1h*8).toFixed(2)+' bbl\n'+
+      '  Em 12h: '+(proj.ratePer1h*12).toFixed(2)+' bbl\n'+
+      '\n⚠ Válido se a taxa for constante (fluido de mesma\ndensidade e sem variação de absorção da formação).';
+    document.getElementById('proj_v').innerHTML=proj.ratePer1h.toFixed(3)+' bbl/h '+tipWrap(tipProj);
+    document.getElementById('proj_d').textContent='Regressão linear sobre '+nObs+' leituras. Em 4h: '+(proj.ratePer1h*4).toFixed(2)+' bbl absorvidos.';
+  }else{pp.style.display='none';}
+
+  // Tabela
+  renderFinalResults();
+  renderH1Banner();
+}
+
+/* =====================================================
+   CHARTS
+   ===================================================== */
+function mk_legend(id,items){
+  var d=document.getElementById(id);if(!d)return;
+  d.innerHTML=items.map(function(it){
+    var sq=it.dash?
+      '<span class="leg-dash" style="background:none;border-top:2px '+it.dash+' '+it.color+'"></span>':
+      '<span class="leg-dot" style="background:'+it.color+'"></span>';
+    return '<span class="leg">'+sq+it.label+'</span>';
+  }).join('');
+}
+function uch(){
+  if(!cfg)return;
+  var labels=rds.map(function(r){return lbl_step(r.h);});
+  var isDark=window.matchMedia('(prefers-color-scheme:dark)').matches;
+  var tc=isDark?'rgba(255,255,255,.45)':'rgba(0,0,0,.4)';
+  var gc=isDark?'rgba(255,255,255,.06)':'rgba(0,0,0,.05)';
+  var baseOpts={responsive:true,maintainAspectRatio:false,
+    plugins:{legend:{display:false}},
+    scales:{
+      x:{ticks:{color:tc,font:{size:11}},grid:{color:gc}},
+      y:{ticks:{color:tc,font:{size:11}},grid:{color:gc}}
+    }};
+  function destroy(id){if(CH[id]){CH[id].destroy();delete CH[id];}}
+  var zoneColors=['#2D6A4F','#E24B4A','#9333EA','#0891B2','#65A30D'];
+
+  /* ── JANELA OPERACIONAL: Nível Sonolog (m) vs Tempo ── */
+  destroy('ch_jo');
+  // ── JANELA OPERACIONAL — ΔP (overbalance real) vs Tempo ──
+  var critZoneJO = cfg.zones.reduce(function(a,b){return a.fp<b.fp?a:b;});
+  var joOBtarget = cfg.ot;
+
+  // ΔP real a cada leitura (r.bal = Ph_fundo − Pr_zona_critica) — definido ANTES do range
+  var joDPdata = rds.map(function(r){
+    var zd = r.zoneData
+      ? (r.zoneData.find(function(z){return z.name===critZoneJO.name;})||r.zoneData[0])
+      : null;
+    return +((zd ? zd.bal : r.bal)||0).toFixed(1);
+  });
+
+  // Janela operacional: mínimo seguro = 50% do OB alvo (não menos que 30 psi)
+  // Poço onshore workover: manter ΔP > 0 é obrigatório; abaixo do mínimo há risco de influxo
+  var joOBmin = Math.max(30, Math.round(joOBtarget * 0.50));
+
+  // Range Y automático: engloba todos os ΔP reais + janela + 15% de padding
+  var dpMin = Math.min.apply(null, joDPdata);
+  var dpMax = Math.max.apply(null, joDPdata);
+  var rawMin = Math.min(dpMin, 0);          // sempre mostra o zero (balanceado)
+  var rawMax = Math.max(dpMax, joOBtarget); // sempre mostra o alvo
+  var rangePad = Math.max((rawMax - rawMin) * 0.15, 40);
+  var joYMin = rawMin - rangePad;
+  var joYMax = rawMax + rangePad;
+
+  // Cor de cada ponto/segmento
+  function joSegColor(dp){
+    if(dp > joOBtarget) return 'rgba(45,106,79,.9)';   // sobrepressão (laranja)
+    if(dp < joOBmin)    return 'rgba(163,45,45,.9)';    // colapso (vermelho)
+    return 'rgba(15,110,86,.95)';                        // janela OK (verde)
+  }
+  var joPtColors = joDPdata.map(joSegColor);
+
+  // Labels X: duas linhas — tempo + ΔP em psi, coloridas por zona
+  var joXLabels = rds.map(function(r,i){
+    var dp=joDPdata[i];
+    var timeLbl = r.isInitialStatic ? 'h₀ (NE)' : lbl_step(r.h);
+    var dpSign  = dp>=0?'+':'';
+    return [timeLbl, dpSign+Math.round(dp)+' psi'];
+  });
+  var joTickColors = joDPdata.map(function(dp){
+    if(dp > joOBtarget) return isDark?'#A0DFBE':'#8B5A00';
+    if(dp < joOBmin)    return isDark?'#F7C1C1':'#a32d2d';
+    return isDark?'#9FE1CB':'#0f6e56';
+  });
+
+  var joDS=[{
+    label:'ΔP Overbalance (psi)',
+    data:joDPdata,
+    borderColor:'#378ADD',
+    backgroundColor:joPtColors,
+    pointBackgroundColor:joPtColors,
+    pointBorderColor:joPtColors,
+    tension:.3,
+    fill:false,
+    pointRadius:rds.map(function(_,i){return i===rds.length-1?9:6;}),
+    pointHoverRadius:10,
+    borderWidth:2.5,
+    segment:{
+      borderColor:function(ctx){
+        var avg=(ctx.p0.parsed.y+ctx.p1.parsed.y)/2;
+        return joSegColor(avg);
+      }
+    }
+  }];
+
+  // Plugin: faixas coloridas + labels das zonas
+  var joPlugin={
+    id:'joZones',
+    beforeDraw:function(chart){
+      var c=chart.ctx, yS=chart.scales.y, xS=chart.scales.x;
+      var xL=xS.left, xR=xS.right;
+      var yA=chart.chartArea.top, yB=chart.chartArea.bottom;
+      var y0  = yS.getPixelForValue(joOBmin);
+      var yTgt= yS.getPixelForValue(joOBtarget);
+      c.save();
+      // Sobrepressão (acima da janela)
+      c.fillStyle='rgba(45,106,79,.11)';
+      c.fillRect(xL, yA, xR-xL, Math.max(0, yTgt-yA));
+      // Janela operacional (verde)
+      c.fillStyle='rgba(15,110,86,.10)';
+      c.fillRect(xL, yTgt, xR-xL, Math.max(0, y0-yTgt));
+      // Colapso (abaixo de 0)
+      c.fillStyle='rgba(163,45,45,.11)';
+      c.fillRect(xL, y0, xR-xL, Math.max(0, yB-y0));
+      // Rótulos de zona
+      c.font='bold 10px sans-serif';
+      var midSob=(yA+yTgt)/2, midJan=(yTgt+y0)/2, midCol=(y0+yB)/2;
+      c.fillStyle=isDark?'rgba(250,199,117,.75)':'rgba(130,75,0,.7)';
+      c.fillText('▲ SOBREPRESSÃO',xL+10,Math.max(yA+14,midSob));
+      c.fillStyle=isDark?'rgba(93,202,165,.85)':'rgba(8,90,65,.75)';
+      c.fillText('◉ JANELA OPERACIONAL (+'+joOBmin+' … +'+joOBtarget+' psi)',xL+10,midJan);
+      c.fillStyle=isDark?'rgba(240,149,149,.75)':'rgba(130,30,30,.7)';
+      c.fillText('▼ ZONA DE COLAPSO',xL+10,Math.min(yB-6,midCol));
+      // Linha do target
+      c.setLineDash([6,4]);c.lineWidth=1.5;
+      c.strokeStyle='rgba(15,110,86,.55)';
+      c.beginPath();c.moveTo(xL,yTgt);c.lineTo(xR,yTgt);c.stroke();
+      // Linha do zero
+      c.strokeStyle='rgba(163,45,45,.45)';
+      c.beginPath();c.moveTo(xL,y0);c.lineTo(xR,y0);c.stroke();
+      c.restore();
+    }
+  };
+
+  CH['ch_jo']=new Chart(document.getElementById('ch_jo'),{
+    type:'line',
+    data:{labels:joXLabels, datasets:joDS},
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      plugins:{
+        legend:{display:false},
+        tooltip:{callbacks:{
+          title:function(items){
+            var r=rds[items[0].dataIndex];
+            return r.isInitialStatic?'h₀ — Nível Estático Registrado':lbl_step(r.h);
+          },
+          label:function(ctx){
+            if(ctx.datasetIndex!==0)return null;
+            var dp=ctx.parsed.y;
+            var sign=dp>=0?'+':'';
+            var zone=dp>joOBtarget?'⬆ Sobrepressão (acima do alvo)':
+                     dp<joOBmin?'⬇ Colapso (underbalance)':
+                     '✓ Dentro da Janela Operacional';
+            var dist=dp>joOBtarget?'+'+(dp-joOBtarget).toFixed(0)+' psi acima do alvo':
+                     dp<joOBmin?(-dp).toFixed(0)+' psi de deficit':
+                     (joOBtarget-dp).toFixed(0)+' psi para atingir alvo';
+            return ['ΔP: '+sign+dp.toFixed(0)+' psi','Zona: '+zone,'  → '+dist];
+          }
+        }}
+      },
+      scales:{
+        x:{
+          ticks:{
+            color:function(ctx){return joTickColors[ctx.index]||tc;},
+            font:function(ctx){return {size:10,weight:600};},
+            maxRotation:0,minRotation:0
+          },
+          grid:{color:gc},
+          title:{display:true,text:'Leitura / Intervalo  (ΔP = Ph − Pr)',color:tc,font:{size:10}}
+        },
+        y:{
+          min:joYMin, max:joYMax,
+          ticks:{color:tc,font:{size:10},
+            callback:function(v){
+              var sign=v>0?'+':v===0?'±':'';
+              return sign+v.toFixed(0)+' psi';
+            }
+          },
+          grid:{color:function(ctx){
+            if(Math.abs(ctx.tick.value-joOBmin)<0.5)return 'rgba(163,45,45,.4)';
+            if(Math.abs(ctx.tick.value-joOBtarget)<0.5)return 'rgba(15,110,86,.4)';
+            return gc;
+          }},
+          title:{display:true,text:'Overbalance ΔP (psi)',color:tc,font:{size:10}}
+        }
+      }
+    },
+    plugins:[joPlugin]
+  });
+  mk_legend('leg_jo',[
+    {color:'rgba(15,110,86,.9)',label:'Dentro da Janela'},
+    {color:'rgba(45,106,79,.9)',label:'Sobrepressão'},
+    {color:'rgba(163,45,45,.9)',label:'Colapso (underbalance)'}
+  ]);
+
+  // Chart 1: Sonolog level
+  destroy('ch_l');
+  var lDS=[
+    {label:'Sonolog medido (ft)',data:rds.map(function(r){return r.sl;}),
+     borderColor:'#378ADD',backgroundColor:'rgba(55,138,221,.1)',tension:.35,fill:true,
+     pointRadius:5,pointHoverRadius:7,borderWidth:2}
+  ];
+  cfg.zones.forEach(function(z,i){
+    // Target level: onde o nível precisa estar para Ph aplicada no fundo = Pr + OB
+    var grad_m=0.1704*cfg.fd; // psi/m metros
+    var neTgt = cfg.refDepthM - (z.fp+cfg.ot)/grad_m;
+    lDS.push({label:'Alvo '+z.name,data:labels.map(function(){return Math.max(0,neTgt*3.28084);}),
+      borderColor:zoneColors[i%zoneColors.length],borderDash:[7,4],fill:false,pointRadius:0,borderWidth:2,tension:0});
+  });
+  lDS.push({label:'TVD',data:labels.map(function(){return cfg.td;}),
+    borderColor:'rgba(150,150,140,.4)',borderDash:[3,5],fill:false,pointRadius:0,borderWidth:1,tension:0});
+  if(cfg.hasPacker&&cfg.path!=='ambos'){
+    lDS.push({label:'Packer',data:labels.map(function(){return cfg.packerDepthM*3.28084;}),
+      borderColor:'rgba(45,106,79,.7)',borderDash:[2,4],fill:false,pointRadius:0,borderWidth:1.5,tension:0});
+  }
+  CH['ch_l']=new Chart(document.getElementById('ch_l'),{
+    type:'line',data:{labels:labels,datasets:lDS},
+    options:Object.assign({},baseOpts,{
+      scales:{
+        x:{ticks:{color:tc,font:{size:11}},grid:{color:gc}},
+        y:{reverse:true,ticks:{color:tc,font:{size:11}},grid:{color:gc},
+          title:{display:true,text:'m (profundidade)',color:tc,font:{size:11}}}
+      }
+    })
+  });
+  var legItems=[{color:'#378ADD',label:'Sonolog medido'}];
+  cfg.zones.forEach(function(z,i){legItems.push({color:zoneColors[i%zoneColors.length],label:'Alvo '+z.name,dash:'dashed'});});
+  legItems.push({color:'rgba(150,150,140,.5)',label:'TVD',dash:'dotted'});
+  if(cfg.hasPacker&&cfg.path!=='ambos')legItems.push({color:'rgba(45,106,79,.7)',label:'Packer',dash:'dashed'});
+  mk_legend('leg_l',legItems);
+
+  // Chart 2: Pressure vs zones
+  destroy('ch_p');
+  var pDS=[
+    {label:'P. Hidrostática aplicada no fundo',data:rds.map(function(r){return r.hp;}),
+     borderColor:'#1D9E75',backgroundColor:'rgba(29,158,117,.09)',tension:.35,fill:true,pointRadius:5,borderWidth:2}
+  ];
+  cfg.zones.forEach(function(z,i){
+    pDS.push({label:'Pr '+z.name,data:labels.map(function(){return z.fp;}),
+      borderColor:zoneColors[i%zoneColors.length],borderDash:[7,4],fill:false,pointRadius:0,borderWidth:2});
+    pDS.push({label:'Alvo OB '+z.name,data:labels.map(function(){return z.fp+cfg.ot;}),
+      borderColor:zoneColors[i%zoneColors.length],borderDash:[3,5],fill:false,pointRadius:0,borderWidth:1.5});
+  });
+  CH['ch_p']=new Chart(document.getElementById('ch_p'),{type:'line',data:{labels:labels,datasets:pDS},options:baseOpts});
+  var pLeg=[{color:'#1D9E75',label:'Ph aplicada'}];
+  cfg.zones.forEach(function(z,i){
+    pLeg.push({color:zoneColors[i%zoneColors.length],label:'Pr '+z.name,dash:'dashed'});
+    pLeg.push({color:zoneColors[i%zoneColors.length],label:'Alvo '+z.name,dash:'dotted'});
+  });
+  mk_legend('leg_p',pLeg);
+
+  // Chart 3: PSI vs Volume
+  destroy('ch_pv');
+  var pvData=rds.map(function(r){return{x:+r.fv.toFixed(2),y:r.hp};});
+  var minFp=Math.min.apply(null,cfg.zones.map(function(z){return z.fp;}));
+  var maxTgt=Math.max.apply(null,cfg.zones.map(function(z){return z.fp+cfg.ot;}));
+  var pvDS=[{label:'PSI × Volume',data:pvData,borderColor:'#378ADD',backgroundColor:'rgba(55,138,221,.7)',pointRadius:6,pointHoverRadius:8,borderWidth:2,showLine:true,tension:.3}];
+  CH['ch_pv']=new Chart(document.getElementById('ch_pv'),{
+    type:'scatter',data:{datasets:pvDS},
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false}},
+      scales:{
+        x:{type:'linear',title:{display:true,text:'Volume no poço (bbl)',color:tc,font:{size:11}},ticks:{color:tc,font:{size:11}},grid:{color:gc},min:0},
+        y:{type:'linear',title:{display:true,text:'Pressão aplicada (psi)',color:tc,font:{size:11}},ticks:{color:tc,font:{size:11}},grid:{color:gc}}
+      }
+    },
+    plugins:[{
+      id:'opWindow',
+      beforeDraw:function(chart){
+        var ctx=chart.ctx;
+        var yScale=chart.scales.y;var xScale=chart.scales.x;
+        var y1=yScale.getPixelForValue(maxTgt);var y2=yScale.getPixelForValue(minFp);
+        var xL=xScale.left;var xR=xScale.right;
+        ctx.save();
+        ctx.fillStyle=isDark?'rgba(15,110,86,.12)':'rgba(15,110,86,.08)';
+        ctx.fillRect(xL,Math.min(y1,y2),xR-xL,Math.abs(y2-y1));
+        cfg.zones.forEach(function(z,i){
+          var yTgt=yScale.getPixelForValue(z.fp+cfg.ot);var yFp=yScale.getPixelForValue(z.fp);
+          ctx.strokeStyle=zoneColors[i%zoneColors.length];ctx.lineWidth=1.5;ctx.setLineDash([6,4]);
+          ctx.beginPath();ctx.moveTo(xL,yTgt);ctx.lineTo(xR,yTgt);ctx.stroke();
+          ctx.setLineDash([3,3]);ctx.beginPath();ctx.moveTo(xL,yFp);ctx.lineTo(xR,yFp);ctx.stroke();
+          ctx.setLineDash([]);
+        });
+        ctx.restore();
+      }
+    }]
+  });
+  var pvLeg=[{color:'#378ADD',label:'Leitura PSI × Vol'}];
+  cfg.zones.forEach(function(z,i){pvLeg.push({color:zoneColors[i%zoneColors.length],label:z.name+' (Pr/Alvo)',dash:'dashed'});});
+  pvLeg.push({color:'rgba(15,110,86,.3)',label:'Janela Operacional'});
+  mk_legend('leg_pv',pvLeg);
+
+  // Chart 4: Absorption
+  destroy('ch_a');
+  var aLabels=rds.filter(function(r){return r.h>0&&!r.isAutoTarget;}).map(function(r){return lbl_step(r.h);});
+  var aData=rds.filter(function(r){return r.h>0&&!r.isAutoTarget;}).map(function(r){return +Math.max(0,r.ar).toFixed(3);});
+  var aDS=[{type:'bar',label:'Taxa (bbl/h)',data:aData,backgroundColor:'rgba(45,106,79,.55)',borderColor:'#2D6A4F',borderWidth:1,borderRadius:3}];
+  var proj=calcProj();
+  if(proj&&proj.ratePer1h>0&&aLabels.length>=1){
+    var maxStep2=rds.length-1;
+    var projLabA=[],projValA=[];
+    for(var hh=maxStep2;hh<=maxStep2+3;hh++){projLabA.push(lbl_step(hh+1)+' (proj.)');projValA.push(+proj.ratePer1h.toFixed(3));}
+    var allLabA=aLabels.concat(projLabA);
+    var padA=aData.concat(new Array(projLabA.length).fill(null));
+    var projLine=new Array(aData.length-1).fill(null).concat([aData[aData.length-1]]).concat(projValA);
+    aDS[0].data=padA;
+    aDS.push({type:'line',label:'Projeção (bbl/h)',data:projLine,borderColor:'#5DBF8A',borderDash:[5,3],fill:false,pointRadius:3,borderWidth:2,tension:.2});
+    aLabels=allLabA;
+  }
+  CH['ch_a']=new Chart(document.getElementById('ch_a'),{type:'bar',data:{labels:aLabels,datasets:aDS},options:baseOpts});
+  mk_legend('leg_a',[{color:'#2D6A4F',label:'Taxa real (bbl/h)'},{color:'#5DBF8A',label:'Projeção',dash:'dashed'}]);
+
+  // Chart 5: Cumulative
+  destroy('ch_c');
+  var cumInj=0,cumAbs=0,injArr=[],absArr=[];
+  rds.forEach(function(r){cumInj+=r.bbl;cumAbs+=Math.max(0,r.abs);injArr.push(+cumInj.toFixed(2));absArr.push(+cumAbs.toFixed(2));});
+  var cLabels=rds.map(function(r){return lbl_step(r.h);});
+  var cDS=[
+    {label:'Total injetado (bbl)',data:injArr,borderColor:'#378ADD',backgroundColor:'rgba(55,138,221,.08)',tension:.35,fill:true,pointRadius:4,borderWidth:2},
+    {label:'Absorção acumulada (bbl)',data:absArr,borderColor:'#E24B4A',backgroundColor:'rgba(226,75,74,.07)',tension:.35,fill:true,pointRadius:4,borderWidth:2}
+  ];
+  CH['ch_c']=new Chart(document.getElementById('ch_c'),{type:'line',data:{labels:cLabels,datasets:cDS},options:baseOpts});
+  mk_legend('leg_c',[{color:'#378ADD',label:'Total injetado'},{color:'#E24B4A',label:'Absorção acumulada'}]);
+}
+
+
+/* =====================================================
+   EXPORT EXCEL
+   ===================================================== */
+async function exportExcel(){
+  if(typeof ExcelJS==='undefined'){alert('ExcelJS não carregada.');return;}
+  if(!cfg||rds.length<1){alert('Inicie a simulação primeiro.');return;}
+  var btn=document.getElementById('btn_export');
+  btn.textContent='⏳ Gerando...';btn.disabled=true;
+  try{
+    var wb=new ExcelJS.Workbook();
+    wb.creator='Controle de Poço — PetroRecôncavo';wb.created=new Date();
+    var CL={navy:'FF1A3A5C',navyMid:'FF2A4A7C',amber:'FFBA7517',amberLight:'FFFAEEDA',
+      green:'FF0F6E56',greenLight:'FFE1F5EE',red:'FFA32D2D',redLight:'FFFCEBEB',
+      yellowLight:'FFFFFCF0',gray1:'FFF5F5F3',gray2:'FFE8E8E4',white:'FFFFFFFF',black:'FF1A1A18',muted:'FF6B6B65'};
+    function fill(argb){return{type:'pattern',pattern:'solid',fgColor:{argb:argb}};}
+    function thin(argb){return{style:'thin',color:{argb:argb||CL.gray2}};}
+
+    var intLbl=fmt_int_label();
+    var lat=rds[rds.length-1];
+    var obsRds=rds.filter(function(r){return r.h>0&&!r.isAutoTarget;});
+    var totalInj=rds.reduce(function(a,r){return a+r.bbl;},0);
+    var totalAbs=obsRds.reduce(function(a,r){return a+Math.max(0,r.abs);},0);
+    var avgRate=obsRds.length>0?obsRds.reduce(function(a,r){return a+Math.max(0,r.ar);},0)/obsRds.length:0;
+    var proj=calcProj();
+    var finalRate=proj?proj.ratePer1h:avgRate;
+    var pathLabels={anular:'Anular',coluna:'Coluna',ambos:'Col.+Anular'};
+    var genDate=new Date().toLocaleString('pt-BR');
+
+    /* Sheet 1: Resumo */
+    var s1=wb.addWorksheet('Resumo',{views:[{showGridLines:false}]});
+    s1.columns=[{width:38},{width:28},{width:20}];
+    s1.mergeCells('A1:C1');
+    var ttl=s1.getCell('A1');
+    ttl.value='SIMULADOR DE POÇO ONSHORE v25 — RELATÓRIO'+(cfg.wellName?' | Poço: '+cfg.wellName:'');
+    ttl.font={bold:true,size:14,color:{argb:CL.white}};ttl.fill=fill(CL.navy);
+    ttl.alignment={horizontal:'center',vertical:'middle'};s1.getRow(1).height=36;
+    s1.mergeCells('A2:C2');
+    var sub=s1.getCell('A2');
+    sub.value='Gerado: '+genDate+' | Via: '+pathLabels[cfg.path]+' | Op: '+cfg.optype+' | Intervalo: '+intLbl;
+    sub.font={size:9,color:{argb:CL.muted},italic:true};sub.fill=fill(CL.gray2);
+    sub.alignment={horizontal:'right'};s1.getRow(2).height=18;
+    s1.addRow([]);
+    function addSec(title){
+      var r=s1.addRow([title]);s1.mergeCells('A'+r.number+':C'+r.number);
+      var c=s1.getCell('A'+r.number);
+      c.font={bold:true,size:11,color:{argb:CL.white}};c.fill=fill(CL.navy);
+      c.alignment={horizontal:'left',indent:1};s1.getRow(r.number).height=22;
+    }
+    function addP(label,val,unit,isAlt){
+      var r=s1.addRow([label,val,unit||'']);
+      var bg=isAlt?CL.gray1:CL.white;
+      [1,2,3].forEach(function(c){r.getCell(c).fill=fill(bg);});
+      r.getCell(1).font={size:11};r.getCell(2).font={bold:true,size:11};
+      r.getCell(3).font={size:10,color:{argb:CL.muted}};
+      r.getCell(1).alignment={indent:2};r.getCell(2).alignment={horizontal:'right'};
+    }
+
+    addSec('SEÇÃO 1 — DADOS DO POÇO');
+    [
+      ['Tipo de Fluido',cfg.fluidType,''],
+      ['TVD',cfg.tdM+' m ('+cfg.td.toFixed(0)+' ft)',''],
+      ['Densidade Fluido',cfg.fd,'ppg'],
+      ['BSW',cfg.fluidType==='mistura'?cfg.bsw+'%  (ρ_água='+cfg.rhoWater+' | ρ_óleo='+cfg.rhoOil+')':'N/A (não BSW)',''],
+      ['Packer Presente',cfg.hasPacker?'Sim ('+cfg.packerDepthM+' m)':'Não',''],
+      ['Prof. Referência Ph',cfg.refDepthM+' m',cfg.hasPacker&&cfg.path!=='ambos'?'(packer)':'(TVD)'],
+      ['Via de Medição',pathLabels[cfg.path],''],
+      ['Tipo de Operação',cfg.optype,''],
+      ['Condição do Poço',cfg.columnMode==='desequipado'?'Desequipado':'Equipado ('+cfg.columnTotalM.toFixed(0)+' m)',''],
+      ['Overbalance Alvo',cfg.ot,'psi'],
+      ['Intervalo',cfg.intervalMin,'min ('+intLbl+')'],
+      ['Nível Estático Registrado',cfg.neInitialM+' m','h₀'],
+    ].forEach(function(p,i){addP(p[0],p[1],p[2],i%2===0);});
+
+    s1.addRow([]);
+    addSec('SEÇÃO 2 — REVESTIMENTO');
+    cfg.casings.forEach(function(cs,i){
+      addP('Seção '+(i+1),'OD='+cs.co+'" · ID='+cs.ci+'" · '+cs.fromM+'m–'+cs.toM+'m','',i%2===0);
+    });
+    s1.addRow([]);
+    addSec('SEÇÃO 3 — COLUNA');
+    cfg.column.forEach(function(c,i){
+      var unit=c.count>0?(c.totalLen/c.count).toFixed(2):'—';
+      addP('Seção '+(i+1)+' ('+c.type+')','OD='+c.od+'" ID='+c.matchId+'" · '+c.count+' × '+unit+'m = '+c.totalLen+'m','',i%2===0);
+    });
+    s1.addRow([]);
+    addSec('SEÇÃO 4 — ZONAS DE FORMAÇÃO');
+    cfg.zones.forEach(function(z,i){
+      addP(z.name,'Topo='+z.topoM+'m · Base='+z.baseM+'m · Pr='+z.fp+' psi'+(z.prFromNE?' (NE calc: '+z.prFromNE.toFixed(0)+')':''),'',i%2===0);
+    });
+    s1.addRow([]);
+    addSec('RESULTADO FINAL — TAXA DE ABSORÇÃO & OVERBALANCE');
+    var statusText=lat.bal>cfg.ot?'OVERBALANCE':lat.bal>0?'BALANCEADO':'UNDERBALANCE';
+    [
+      ['Status Final',statusText,''],
+      ['Taxa de Absorção (projeção)',finalRate.toFixed(3),'bbl/h'],
+      ['Taxa Média (observada)',avgRate.toFixed(3),'bbl/h'],
+      ['Overbalance Efetivo Final',lat.bal.toFixed(0),'psi vs. '+lat.critZone],
+      ['Total Injetado',totalInj.toFixed(2),'bbl'],
+      ['Total Absorvido',totalAbs.toFixed(2),'bbl'],
+      ['Leituras Registradas',rds.length,''],
+    ].forEach(function(p,i){addP(p[0],p[1],p[2],i%2===0);});
+
+    /* Sheet 2: Monitoramento */
+    var s2=wb.addWorksheet('Monitoramento',{views:[{state:'frozen',ySplit:3,showGridLines:false}]});
+    var baseCols=[{key:'t',width:14},{key:'slm',width:14},{key:'fcm',width:14},
+      {key:'fv',width:15},{key:'bbl',width:15},{key:'abs',width:15},{key:'ar',width:14}];
+    cfg.zones.forEach(function(z,i){baseCols.push({key:'ph_'+i,width:14});baseCols.push({key:'dp_'+i,width:14});baseCols.push({key:'emw_'+i,width:12});});
+    baseCols.push({key:'sts',width:14});
+    s2.columns=baseCols;
+    var totalCols=baseCols.length;
+    var lastColLetter=String.fromCharCode(64+Math.min(totalCols,26));
+    if(totalCols>26)lastColLetter='A'+String.fromCharCode(64+totalCols-26);
+    s2.mergeCells('A1:'+lastColLetter+'1');
+    var s2t=s2.getCell('A1');
+    s2t.value='MONITORAMENTO — Via: '+pathLabels[cfg.path]+' | TVD='+cfg.tdM+'m | Fluido: '+cfg.fd+' ppg | BSW '+cfg.bsw+'% | Intervalo: '+intLbl;
+    s2t.font={bold:true,size:12,color:{argb:CL.white}};s2t.fill=fill(CL.navy);
+    s2t.alignment={horizontal:'center'};s2.getRow(1).height=30;
+    s2.mergeCells('A2:'+lastColLetter+'2');
+    var s2i=s2.getCell('A2');
+    var zInfo=cfg.zones.map(function(z){return z.name+': Pr='+z.fp+'psi @'+z.topoM+'m';}).join(' | ');
+    s2i.value='Zonas: '+zInfo+' | OB Alvo: +'+cfg.ot+'psi | '+(cfg.hasPacker?'Packer @'+cfg.packerDepthM+'m':'Sem packer');
+    s2i.font={size:9,color:{argb:CL.muted},italic:true};s2i.fill=fill(CL.gray2);
+    s2i.alignment={horizontal:'center'};s2.getRow(2).height=16;
+    var hdrs=[cfg.intervalMin===60?'Hora':'Tempo','Son(m)','Col(m)','Vol(bbl)','Inj(bbl)','Abs(bbl)','bbl/h'];
+    cfg.zones.forEach(function(z){hdrs.push('PSI Topo '+z.name);hdrs.push('ΔP '+z.name);hdrs.push('ρe '+z.name+' (ppg)');});
+    hdrs.push('Status');
+    var hRow=s2.addRow(hdrs);
+    hRow.eachCell(function(cell){cell.font={bold:true,color:{argb:CL.white},size:10};cell.fill=fill(CL.navyMid);cell.alignment={horizontal:'center',wrapText:true};});
+    s2.getRow(3).height=28;
+    rds.forEach(function(r){
+      var bal=r.bal;
+      var bgArgb=bal>cfg.ot?CL.greenLight:bal<0?CL.redLight:CL.yellowLight;
+      var statusStr=bal>cfg.ot?'OVER':bal>0?'OK':'UNDER';
+      var rowData=[r.isInitialStatic?'NE (h₀)':lbl_step(r.h),+r.slM.toFixed(0),+r.fcM.toFixed(0),
+        +r.fv.toFixed(2),+r.bbl.toFixed(1),r.h===0?null:+r.abs.toFixed(2),r.h===0?null:+r.ar.toFixed(3)];
+      r.zoneData.forEach(function(zd){rowData.push(+zd.hp.toFixed(0));rowData.push(+zd.bal.toFixed(0));rowData.push(+zd.emw.toFixed(3));});
+      rowData.push(statusStr);
+      var row=s2.addRow(rowData);
+      row.eachCell(function(cell){cell.fill=fill(bgArgb);cell.alignment={horizontal:'center'};cell.border={top:thin(),bottom:thin(),left:thin(CL.gray2),right:thin(CL.gray2)};cell.font={size:10};});
+      r.zoneData.forEach(function(zd,zi){
+        var dpCol=10+zi*2;
+        var dpCell=row.getCell(dpCol+1);
+        dpCell.font={bold:true,size:10,color:{argb:zd.bal>=0?CL.green:CL.red}};
+      });
+      row.height=18;
+    });
+    s2.autoFilter={from:'A3',to:lastColLetter+'3'};
+    s2.pageSetup={paperSize:9,orientation:'landscape',fitToPage:true,fitToWidth:1};
+
+    var buf=await wb.xlsx.writeBuffer();
+    var blob=new Blob([buf],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
+    var url=URL.createObjectURL(blob);
+    var a=document.createElement('a');a.href=url;
+    a.download='poco_onshore_v25_'+new Date().toISOString().slice(0,10).replace(/-/g,'')+'.xlsx';
+    document.body.appendChild(a);a.click();document.body.removeChild(a);URL.revokeObjectURL(url);
+  }catch(err){
+    console.error(err);alert('Erro Excel: '+err.message);
+  }finally{
+    btn.textContent='📥 Exportar Excel';btn.disabled=false;
+  }
+}
+
+/* =====================================================
+   EXPORT PDF
+   ===================================================== */
+async function exportPDF(){
+  if(typeof window.jspdf==='undefined'&&typeof jspdf==='undefined'){alert('jsPDF não carregada.');return;}
+  if(!cfg||rds.length<1){alert('Inicie a simulação primeiro.');return;}
+  var btn=document.getElementById('btn_pdf');
+  btn.textContent='⏳ Gerando...';btn.disabled=true;
+  try{
+    var {jsPDF}=window.jspdf;
+    var doc=new jsPDF({orientation:'portrait',unit:'mm',format:'a4'});
+    var pageW=210,pageH=297,margin=14;
+    var contentW=pageW-margin*2;
+    var intLbl=fmt_int_label();
+    var lat=rds[rds.length-1];
+    var obsRds=rds.filter(function(r){return r.h>0&&!r.isAutoTarget;});
+    var totalInj=rds.reduce(function(a,r){return a+r.bbl;},0);
+    var totalAbs=obsRds.reduce(function(a,r){return a+Math.max(0,r.abs);},0);
+    var avgRate=obsRds.length>0?obsRds.reduce(function(a,r){return a+Math.max(0,r.ar);},0)/obsRds.length:0;
+    var proj=calcProj();
+    var finalRate=proj?proj.ratePer1h:avgRate;
+    var statusText=lat.bal>cfg.ot?'OVERBALANCE':lat.bal>0?'BALANCEADO':'UNDERBALANCE';
+    var pathLabels={anular:'Anular',coluna:'Coluna',ambos:'Col.+Anular'};
+    var genDate=new Date().toLocaleString('pt-BR');
+    var C={navy:[27,77,46],navyMid:[45,106,79],amber:[45,106,79],green:[15,110,86],red:[163,45,45],
+      gray1:[245,245,243],gray2:[232,232,228],white:[255,255,255],black:[26,26,24],muted:[107,107,101]};
+    function setFill(c){doc.setFillColor(c[0],c[1],c[2]);}
+    function setTextC(c){doc.setTextColor(c[0],c[1],c[2]);}
+    var curY=0,pageCount=1;
+
+    function drawHeader(){
+      setFill(C.navy);doc.rect(0,0,pageW,24,'F');
+      doc.setFont('helvetica','bold');doc.setFontSize(13);
+      setTextC(C.white);doc.text('Controle de Poço — PetroRecôncavo',margin,15);
+      doc.setFontSize(8);doc.setFont('helvetica','normal');
+      doc.text('Via: '+pathLabels[cfg.path]+' | Op: '+cfg.optype+' | '+genDate,pageW-margin,15,{align:'right'});
+      curY=30;
+    }
+    function drawFooter(pg,total){
+      doc.setFontSize(7);setTextC(C.muted);
+      doc.text('Gerado: '+genDate,margin,pageH-6);
+      doc.text('Página '+pg+(total?'/'+total:''),pageW-margin,pageH-6,{align:'right'});
+    }
+    function newPage(){if(pageCount>1)doc.addPage();pageCount++;drawHeader();}
+    function spacer(h){curY+=h;}
+    function sectionTitle(text,color){
+      setFill(color||C.navy);doc.rect(margin,curY,contentW,8,'F');
+      doc.setFont('helvetica','bold');doc.setFontSize(9);
+      setTextC(C.white);doc.text(text,margin+3,curY+5.5);
+      curY+=10;
+    }
+
+    drawHeader();drawFooter(1);
+    sectionTitle('DADOS DO POÇO',C.navy);spacer(2);
+    doc.setFont('helvetica','normal');doc.setFontSize(8);setTextC(C.black);
+    var cfgLines=[
+      'TVD: '+cfg.tdM+' m | Fluido: '+cfg.fd+' ppg | Tipo: '+cfg.fluidType+(cfg.fluidType==='mistura'?' | BSW: '+cfg.bsw+'% | ρ_água: '+cfg.rhoWater+' | ρ_óleo: '+cfg.rhoOil:''),
+      'Packer: '+(cfg.hasPacker?'Sim @ '+cfg.packerDepthM+' m':'Não')+' | Ref. Ph: '+cfg.refDepthM+' m',
+      'OB Alvo: +'+cfg.ot+' psi | Intervalo: '+intLbl+' | Condição: '+(cfg.columnMode==='desequipado'?'Desequipado':'Equipado ('+cfg.columnTotalM.toFixed(0)+' m)'),
+      'Zonas: '+cfg.zones.map(function(z){return z.name+' '+z.topoM+'-'+z.baseM+'m Pr='+z.fp+'psi';}).join(' | ')
+    ];
+    cfgLines.forEach(function(l){doc.text(l,margin+2,curY);curY+=5;});
+    spacer(4);
+
+    sectionTitle('RESULTADO FINAL — TAXA DE ABSORÇÃO & OVERBALANCE',C.amber);spacer(2);
+    doc.setFont('helvetica','bold');doc.setFontSize(10);setTextC(C.amber);
+    doc.text('Taxa de Absorção: '+finalRate.toFixed(3)+' bbl/h    |    OB Efetivo: '+(lat.bal>=0?'+':'')+lat.bal.toFixed(0)+' psi    |    Status: '+statusText,margin+2,curY);
+    curY+=6;
+    doc.setFont('helvetica','normal');doc.setFontSize(8);setTextC(C.black);
+    doc.text('Nível Estático Registrado: '+cfg.neInitialM+' m  |  Zona crítica: '+lat.critZone,margin+2,curY);curY+=5;
+    doc.text('Total Injetado: '+totalInj.toFixed(2)+' bbl  |  Total Absorvido: '+totalAbs.toFixed(2)+' bbl  |  Taxa Média: '+avgRate.toFixed(3)+' bbl/h',margin+2,curY);curY+=5;
+    spacer(4);
+
+    sectionTitle('REGISTRO DE LEITURAS',C.navyMid);
+    var tH=['Tempo','Son(m)','Col(m)','Vol','Inj','Abs','bbl/h'];
+    cfg.zones.forEach(function(z){tH.push('PSI '+z.name);tH.push('ΔP '+z.name);tH.push('ρe (ppg)');});
+    tH.push('Status');
+    var tData=rds.map(function(r){
+      var sts=r.bal>cfg.ot?'OVER':r.bal>0?'OK':'UNDER';
+      var row=[r.isInitialStatic?'NE (h₀)':lbl_step(r.h),r.slM.toFixed(0),r.fcM.toFixed(0),
+        r.fv.toFixed(1),r.bbl.toFixed(1),r.h===0?'—':r.abs.toFixed(2),r.h===0?'—':r.ar.toFixed(3)];
+      r.zoneData.forEach(function(zd){row.push(zd.hp.toFixed(0));row.push((zd.bal>=0?'+':'')+zd.bal.toFixed(0));row.push(zd.emw.toFixed(2));});
+      row.push(sts);
+      return row;
+    });
+    doc.autoTable({
+      head:[tH],body:tData,startY:curY,margin:{left:margin,right:margin},
+      styles:{fontSize:7,cellPadding:1.5,font:'helvetica'},
+      headStyles:{fillColor:C.navyMid,textColor:C.white,fontStyle:'bold'},
+      alternateRowStyles:{fillColor:C.gray1},theme:'grid'
+    });
+    curY=doc.lastAutoTable.finalY+6;
+
+    newPage();drawFooter(pageCount);
+    sectionTitle('GRÁFICOS',C.navy);
+    var p2=document.getElementById('p2');
+    var wasHidden=p2.style.display==='none';
+    if(wasHidden)p2.style.display='block';
+    if(wasHidden)uch();
+    await new Promise(function(r){setTimeout(r,200);});
+    var cards=p2.querySelectorAll('.card');
+    for(var ci=0;ci<cards.length&&ci<5;ci++){
+      try{
+        var cnv=await html2canvas(cards[ci],{scale:2,backgroundColor:'#ffffff',logging:false,useCORS:true});
+        var imgData=cnv.toDataURL('image/png');
+        var aspect=cnv.width/cnv.height;
+        var drawW=contentW;var drawH=drawW/aspect;
+        if(curY+drawH>pageH-20){newPage();drawFooter(pageCount);curY+=4;}
+        if(drawH>120){drawH=120;drawW=drawH*aspect;}
+        doc.addImage(imgData,'PNG',margin+(contentW-drawW)/2,curY,drawW,drawH);
+        curY+=drawH+6;
+      }catch(e){}
+    }
+    if(wasHidden)p2.style.display='none';
+
+    var totalPages=doc.internal.getNumberOfPages();
+    for(var pi=1;pi<=totalPages;pi++){doc.setPage(pi);drawFooter(pi,totalPages);}
+    doc.save('poco_onshore_v25_'+new Date().toISOString().slice(0,10)+'.pdf');
+  }catch(err){
+    console.error(err);alert('Erro PDF: '+err.message);
+  }finally{
+    btn.textContent='📄 Exportar PDF';btn.disabled=false;
+  }
+}
+
+/* =====================================================
+   WHATSAPP CARD — v42 (fix: avgA() em vez de calcProj; paleta verde PetroRecôncavo)
+   ===================================================== */
+function renderWhatsApp(){
+  try {
+    var statusEl = document.getElementById('wpp_data_status');
+
+    // ── Sem dados: cfg nulo ou sem leituras reais ──────────────────
+    var realRds = rds.filter(function(r){return !r.isInitialStatic && !r.isAutoTarget && r.h>0;});
+    if(!cfg || realRds.length < 1){
+      // Atualiza header com estado vazio
+      document.getElementById('wpp_wellname').textContent = 'Aguardando dados…';
+      var b = document.getElementById('wpp_status_badge');
+      b.textContent = '—'; b.style.background = '#78909C'; b.style.color = '#fff';
+      document.getElementById('wpp_datetime').textContent = '—';
+      document.getElementById('wpp_op').textContent = '—';
+      document.getElementById('wpp_via').textContent = '—';
+      document.getElementById('wpp_tvd').textContent = '—';
+      document.getElementById('wpp_metrics').innerHTML =
+        '<div style="grid-column:1/-1;background:#f5fbf7;padding:22px;text-align:center;color:#5a9070;font-size:12px">'
+        + '⬆ Inicie a simulação e adicione pelo menos uma leitura para ver o resumo aqui.</div>';
+      document.getElementById('wpp_pressure').innerHTML = '';
+      document.getElementById('wpp_readings').innerHTML = '';
+      document.getElementById('wpp_rec').innerHTML = '';
+      document.getElementById('wpp_footer_time').textContent = '—';
+      if(statusEl) statusEl.textContent = !cfg
+        ? '⚠ Simulação não iniciada — clique em "Iniciar Simulação →" na aba ⚙ Configuração.'
+        : '⚠ Nenhuma leitura manual registrada ainda — adicione leituras na aba 📊 Monitoramento.';
+      return;
+    }
+
+    if(statusEl) statusEl.textContent = '✓ '+realRds.length+' leitura(s) carregada(s)';
+
+    // ── Dados ──────────────────────────────────────────────────────
+    var now = new Date();
+    var nowStr = now.toLocaleDateString('pt-BR') + ' ' + now.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
+    var lat = rds[rds.length-1];
+    var obs = rds.filter(function(r){return r.h>0 && !r.isAutoTarget;});
+    var totalInj = rds.reduce(function(a,r){return a + r.bbl;}, 0);
+    var totalAbs = obs.reduce(function(a,r){return a + Math.max(0,r.abs);}, 0);
+
+    // Taxa: usa avgA() — média das últimas 3 leituras (seguro, sem variável n)
+    var rate = avgA();
+    var intH = cfg.intervalMin / 60;
+    var volNext = rate * intH;
+    var bal = lat.bal || 0;
+
+    var pathLabels = {anular:'Anular', coluna:'Coluna', ambos:'Col.+Anular'};
+    var optypeLabels = {equip:'Equipagem', desequip:'Desequipagem', monitor:'Monitoramento'};
+
+    // Status e cores
+    var statusText, statusBg;
+    if(bal > cfg.ot){ statusText = 'OVERBALANCE ▲'; statusBg = '#2E7D32'; }
+    else if(bal >= 0){ statusText = 'BALANCEADO ≈'; statusBg = '#E65100'; }
+    else { statusText = 'UNDERBALANCE ▼'; statusBg = '#C62828'; }
+
+    // ── Header ────────────────────────────────────────────────────
+    document.getElementById('wpp_wellname').textContent = cfg.wellName || 'Poço sem nome';
+    var badge = document.getElementById('wpp_status_badge');
+    badge.textContent = statusText; badge.style.background = statusBg; badge.style.color = '#fff';
+    document.getElementById('wpp_datetime').textContent = nowStr;
+    document.getElementById('wpp_op').textContent = optypeLabels[cfg.optype] || cfg.optype || '—';
+    document.getElementById('wpp_via').textContent = pathLabels[cfg.path] || cfg.path || '—';
+    document.getElementById('wpp_tvd').textContent = cfg.tdM + 'm · ' + cfg.fd + ' ppg';
+    document.getElementById('wpp_footer_time').textContent = 'Gerado ' + nowStr;
+
+    // ── Métricas 2×2 ──────────────────────────────────────────────
+    function mBox(label, val, unit, bgCol, valCol){
+      return '<div style="background:' + (bgCol||'#fff') + ';padding:13px 16px">'
+        + '<div style="font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:#5a8a6a;font-weight:700;margin-bottom:3px">' + label + '</div>'
+        + '<div style="font-size:26px;font-weight:700;font-family:\'SF Mono\',monospace;color:' + (valCol||'#1a1a18') + ';line-height:1.1">' + val + '</div>'
+        + '<div style="font-size:10px;color:#7aaa8a;margin-top:2px">' + unit + '</div>'
+        + '</div>';
+    }
+    var balSign = bal >= 0 ? '+' : '';
+    var balCol = bal > cfg.ot ? '#2E7D32' : bal >= 0 ? '#C8952A' : '#C62828';
+    document.getElementById('wpp_metrics').innerHTML =
+      mBox('Sonolog Atual', lat.slM != null ? lat.slM.toFixed(0) : '—', 'm · profundidade do nível', '#fff', '#1B4D2E') +
+      mBox('ΔP (Ph − Pr)', balSign + bal.toFixed(0), 'psi · OB alvo +' + cfg.ot + ' psi · ' + lat.critZone, '#fff', balCol) +
+      mBox('Taxa de Absorção', rate.toFixed(3), 'bbl/h · ' + realRds.length + ' leitura(s)', '#EBF5EE', '#2D6A4F') +
+      mBox('Vol. Próx. Intervalo', volNext.toFixed(2), 'bbl esperados (' + (cfg.intervalMin < 60 ? cfg.intervalMin + 'min' : (cfg.intervalMin/60).toFixed(0) + 'h') + ')', '#EBF5EE', '#2D6A4F');
+
+    // ── Pressão por zona ──────────────────────────────────────────
+    var pRows = '';
+    if(lat.zoneData && lat.zoneData.length > 0){
+      lat.zoneData.forEach(function(zd){
+        var isOpen = zd.open !== false;
+        var dv = zd.bal || 0;
+        var dvSign = dv >= 0 ? '+' : '';
+        var dvCol = isOpen ? (dv > cfg.ot ? '#2E7D32' : dv >= 0 ? '#C8952A' : '#C62828') : '#9c9c95';
+        pRows += '<tr>'
+          + '<td style="padding:5px 0;font-size:11px;color:#2D6A4F;font-weight:700">' + zd.name + (isOpen ? '' : ' 🔒') + '</td>'
+          + '<td style="font-family:monospace;font-size:11px;text-align:right;padding:5px 6px">' + zd.fp.toFixed(0) + ' psi</td>'
+          + '<td style="font-family:monospace;font-size:11px;text-align:right;padding:5px 6px">' + (isOpen ? zd.hp.toFixed(0) + ' psi' : '—') + '</td>'
+          + '<td style="font-family:monospace;font-size:11px;text-align:right;color:' + dvCol + ';font-weight:700;padding:5px 0">' + (isOpen ? dvSign + dv.toFixed(0) + ' psi' : '—') + '</td>'
+          + '</tr>';
+      });
+    }
+    document.getElementById('wpp_pressure').innerHTML =
+      '<div style="font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:#5a8a6a;font-weight:700;margin-bottom:7px">Pressão por Zona · OB Alvo +' + cfg.ot + ' psi</div>'
+      + '<table style="width:100%;border-collapse:collapse">'
+      + '<tr><th style="font-size:9px;color:#9c9c95;text-align:left;font-weight:600;padding-bottom:4px">Zona</th>'
+      + '<th style="font-size:9px;color:#9c9c95;text-align:right;font-weight:600;padding-bottom:4px">Pr</th>'
+      + '<th style="font-size:9px;color:#9c9c95;text-align:right;font-weight:600;padding-bottom:4px">Ph</th>'
+      + '<th style="font-size:9px;color:#9c9c95;text-align:right;font-weight:600;padding-bottom:4px">ΔP</th></tr>'
+      + pRows + '</table>';
+
+    // ── Leituras recentes (últimas 5) ─────────────────────────────
+    var recent = realRds.slice(-5).reverse();
+    var rdHtml = '<div style="font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:#5a8a6a;font-weight:700;margin:12px 0 6px">Últimas Leituras</div>'
+      + '<table style="width:100%;border-collapse:collapse;font-family:\'SF Mono\',monospace;font-size:10px">'
+      + '<tr>'
+      + '<th style="font-size:9px;color:#9c9c95;text-align:left;padding-bottom:4px;font-family:sans-serif;font-weight:600">T</th>'
+      + '<th style="font-size:9px;color:#9c9c95;text-align:right;padding-bottom:4px;font-family:sans-serif;font-weight:600">Son.(m)</th>'
+      + '<th style="font-size:9px;color:#9c9c95;text-align:right;padding-bottom:4px;font-family:sans-serif;font-weight:600">Inj.(bbl)</th>'
+      + '<th style="font-size:9px;color:#9c9c95;text-align:right;padding-bottom:4px;font-family:sans-serif;font-weight:600">Abs.(bbl)</th>'
+      + '<th style="font-size:9px;color:#9c9c95;text-align:right;padding-bottom:4px;font-family:sans-serif;font-weight:600">bbl/h</th>'
+      + '<th style="font-size:9px;color:#9c9c95;text-align:right;padding-bottom:4px;font-family:sans-serif;font-weight:600">ΔP(psi)</th></tr>';
+    recent.forEach(function(r){
+      var rb = r.bal || 0;
+      var rc = rb > cfg.ot ? '#2E7D32' : rb >= 0 ? '#C8952A' : '#C62828';
+      rdHtml += '<tr style="border-top:0.5px solid #EBF5EE">'
+        + '<td style="padding:5px 0;color:#5a8a6a;font-family:sans-serif;font-size:9px">' + lbl_step(r.h) + '</td>'
+        + '<td style="text-align:right;padding:5px 4px">' + (r.slM != null ? r.slM.toFixed(0) : '—') + '</td>'
+        + '<td style="text-align:right;padding:5px 4px">' + (r.bbl != null ? r.bbl.toFixed(1) : '—') + '</td>'
+        + '<td style="text-align:right;padding:5px 4px">' + (r.abs != null ? r.abs.toFixed(2) : '—') + '</td>'
+        + '<td style="text-align:right;padding:5px 4px">' + (r.ar != null ? r.ar.toFixed(3) : '—') + '</td>'
+        + '<td style="text-align:right;padding:5px 0;color:' + rc + ';font-weight:700">' + (rb >= 0 ? '+' : '') + rb.toFixed(0) + '</td>'
+        + '</tr>';
+    });
+    rdHtml += '</table>'
+      + '<div style="display:flex;gap:16px;margin-top:10px;padding-top:8px;border-top:1px solid #EBF5EE">'
+      + '<div><span style="font-size:9px;color:#9c9c95;display:block">Total Injetado</span><span style="font-size:13px;font-weight:700;font-family:monospace;color:#1B4D2E">' + totalInj.toFixed(2) + ' bbl</span></div>'
+      + '<div><span style="font-size:9px;color:#9c9c95;display:block">Total Absorvido</span><span style="font-size:13px;font-weight:700;font-family:monospace;color:#1B4D2E">' + totalAbs.toFixed(2) + ' bbl</span></div>'
+      + '<div><span style="font-size:9px;color:#9c9c95;display:block">Taxa Média</span><span style="font-size:13px;font-weight:700;font-family:monospace;color:#1B4D2E">' + rate.toFixed(3) + ' bbl/h</span></div>'
+      + '</div>';
+    document.getElementById('wpp_readings').innerHTML = rdHtml;
+
+    // ── Recomendação ──────────────────────────────────────────────
+    var recBg, recBdr, recTxt, recMsg;
+    if(rate <= 0.1){
+      recBg='#EBF5EE'; recBdr='#2E7D32'; recTxt='#1B4D2E';
+      recMsg='✅ Absorção muito baixa (' + rate.toFixed(3) + ' bbl/h). Formação praticamente não absorve — OB compatível. Manter posição.';
+    } else if(rate <= 1.0){
+      recBg='#FFF8E1'; recBdr='#C8952A'; recTxt='#6D4C0D';
+      recMsg='⚠ Absorção moderada (' + rate.toFixed(3) + ' bbl/h). Monitorar tendência. OB efetivo = ' + (bal >= 0 ? '+' : '') + bal.toFixed(0) + ' psi.';
+    } else if(rate <= 3.0){
+      recBg='#FFF3E0'; recBdr='#E65100'; recTxt='#7F2800';
+      recMsg='⛔ Absorção elevada (' + rate.toFixed(3) + ' bbl/h). Reduzir OB proposto para ~' + Math.max(50, Math.round(bal * 0.5)) + ' psi e monitorar.';
+    } else {
+      recBg='#FFEBEE'; recBdr='#C62828'; recTxt='#7F0000';
+      recMsg='🚨 Absorção ALTA (' + rate.toFixed(3) + ' bbl/h)! Possível fratura/canalização. Reduzir OB drasticamente ou interromper injeção.';
+    }
+    document.getElementById('wpp_rec').innerHTML =
+      '<div style="background:' + recBg + ';border-left:3px solid ' + recBdr + ';border-radius:0 8px 8px 0;padding:11px 14px;margin-top:4px">'
+      + '<div style="font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:' + recBdr + ';font-weight:700;margin-bottom:5px">Recomendação</div>'
+      + '<div style="font-size:11.5px;color:' + recTxt + ';line-height:1.55">' + recMsg + '</div>'
+      + '</div>';
+
+  } catch(err){
+    var statusEl = document.getElementById('wpp_data_status');
+    if(statusEl) statusEl.textContent = '⚠ Erro ao gerar resumo: ' + err.message;
+    console.error('renderWhatsApp error:', err);
+  }
+}
+
+/* Copia versão texto simples formatada para WhatsApp */
+function copyWppCard(){
+  try {
+    var realRds = rds.filter(function(r){return !r.isInitialStatic && !r.isAutoTarget && r.h > 0;});
+    if(!cfg || realRds.length < 1){ alert('Inicie a simulação e adicione pelo menos uma leitura primeiro.'); return; }
+
+    var lat = rds[rds.length-1];
+    var obs = rds.filter(function(r){return r.h>0 && !r.isAutoTarget;});
+    var totalInj = rds.reduce(function(a,r){return a+r.bbl;}, 0);
+    var totalAbs = obs.reduce(function(a,r){return a+Math.max(0,r.abs);}, 0);
+    var rate = avgA();
+    var bal = lat.bal || 0;
+    var now = new Date().toLocaleString('pt-BR');
+    var statusText = bal > cfg.ot ? 'OVERBALANCE ▲' : bal >= 0 ? 'BALANCEADO ≈' : 'UNDERBALANCE ▼';
+    var intH = cfg.intervalMin / 60;
+    var volNext = rate * intH;
+    var pathLabels = {anular:'Anular', coluna:'Coluna', ambos:'Col.+Anular'};
+    var optypeLabels = {equip:'Equipagem', desequip:'Desequipagem', monitor:'Monitoramento'};
+
+    var lines = [
+      '━━━━━━━━━━━━━━━━━━━━━━━━━━━',
+      '🟢 *PetroRecôncavo — Ops. Especiais*',
+      '🛢 *Poço:* ' + (cfg.wellName || '—'),
+      '🕐 ' + now,
+      '━━━━━━━━━━━━━━━━━━━━━━━━━━━',
+      '',
+      '*STATUS: ' + statusText + '*',
+      '',
+      '📊 *Dados do Poço*',
+      '• TVD: ' + cfg.tdM + ' m  |  Fluido: ' + cfg.fd + ' ppg',
+      '• Operação: ' + (optypeLabels[cfg.optype] || cfg.optype || '—'),
+      '• Via: ' + (pathLabels[cfg.path] || cfg.path || '—') + '  |  OB Alvo: +' + cfg.ot + ' psi',
+      '',
+      '📡 *Sonolog Atual:* ' + lat.slM.toFixed(0) + ' m  |  Col. Fluido: ' + lat.fcM.toFixed(0) + ' m',
+      '',
+      '⚖ *Pressão por Zona*',
+    ];
+    if(lat.zoneData){
+      lat.zoneData.forEach(function(zd){
+        var isOpen = zd.open !== false;
+        var dv = zd.bal || 0;
+        lines.push('• ' + zd.name + (isOpen?'':' 🔒') + ': Pr=' + zd.fp.toFixed(0) + ' | Ph=' + (isOpen?zd.hp.toFixed(0):'—') + ' | ΔP=' + (isOpen?(dv>=0?'+':'')+dv.toFixed(0)+' psi':'—'));
+      });
+    }
+    lines = lines.concat([
+      '',
+      '💧 *Absorção*',
+      '• Taxa (média 3 últimas): ' + rate.toFixed(3) + ' bbl/h',
+      '• Vol. próx. intervalo: ' + volNext.toFixed(2) + ' bbl',
+      '• Total injetado: ' + totalInj.toFixed(2) + ' bbl',
+      '• Total absorvido: ' + totalAbs.toFixed(2) + ' bbl  (' + realRds.length + ' leitura(s))',
+      '',
+    ]);
+    var recent3 = realRds.slice(-3);
+    if(recent3.length > 0){
+      lines.push('📋 *Últimas ' + recent3.length + ' Leituras*');
+      recent3.forEach(function(r){
+        var rb = r.bal || 0;
+        lines.push('• ' + lbl_step(r.h) + ': Son=' + r.slM.toFixed(0) + 'm | Inj=' + r.bbl.toFixed(1) + ' | Abs=' + r.abs.toFixed(2) + ' | ΔP=' + (rb>=0?'+':'') + rb.toFixed(0) + ' psi');
+      });
+      lines.push('');
+    }
+    var recMsg;
+    if(rate<=0.1) recMsg='✅ Absorção baixa. Manter posição.';
+    else if(rate<=1.0) recMsg='⚠ Absorção moderada. Monitorar tendência.';
+    else if(rate<=3.0) recMsg='⛔ Absorção elevada. Reduzir OB.';
+    else recMsg='🚨 Absorção ALTA! Avaliar interrupção da injeção.';
+    lines = lines.concat([
+      '💬 *Recomendação*',
+      recMsg,
+      '',
+      '━━━━━━━━━━━━━━━━━━━━━━━━━━━',
+      '_Controle de Poço · PetroRecôncavo_',
+    ]);
+
+    var text = lines.join('\n');
+    if(navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(text).then(function(){
+        var btn = document.getElementById('btn_wpp_copy');
+        var orig = btn.textContent;
+        btn.textContent = '✓ Copiado!';
+        setTimeout(function(){ btn.textContent = orig; }, 2500);
+      }).catch(function(){ fallbackCopy(text); });
+    } else { fallbackCopy(text); }
+  } catch(err){ alert('Erro ao copiar: ' + err.message); }
+}
+function fallbackCopy(text){
+  var ta = document.createElement('textarea');
+  ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0';
+  document.body.appendChild(ta); ta.focus(); ta.select();
+  try{ document.execCommand('copy'); } catch(e){}
+  document.body.removeChild(ta);
+  var btn = document.getElementById('btn_wpp_copy');
+  if(btn){ var orig = btn.textContent; btn.textContent = '✓ Copiado!'; setTimeout(function(){ btn.textContent = orig; }, 2500); }
+}
+
+
+</script>
+</body>
+</html>
