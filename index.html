@@ -2711,11 +2711,23 @@ function upM(){
   } else if(dpAtual >= joOBminRec){
     // ── ESTADO 2: DENTRO DA JANELA — só compensar absorção ──
     var volManter=Math.max(0,absInNext);
+    // Breakdown das leituras usadas em avgA() — últimas 3 com h>0 e não isAutoTarget
+    var aaRds=rds.slice(-3).filter(function(r){return r.h>0&&!r.isAutoTarget;});
+    var aaLines=aaRds.map(function(r){
+      return '    H'+r.h+': '+Math.max(0,r.ar).toFixed(4)+' bbl/h';
+    }).join('\n');
+    var aaFormula=aaRds.length>1
+      ? '('+aaRds.map(function(r){return Math.max(0,r.ar).toFixed(4);}).join(' + ')+') / '+aaRds.length
+      : aaRds.length===1?'única leitura (H'+aaRds[0].h+')':'sem leituras';
     var tipManter=
       '━━ MANTER POSIÇÃO NA JANELA ━━\n'+
       '\nΔP atual: +'+dpAtual.toFixed(0)+' psi (janela: +'+joOBminRec+' … +'+joWindowMaxRec.toFixed(0)+' psi)\n'+
       '\nCOMPENSAÇÃO DE ABSORÇÃO\n'+
-      '  Taxa méd. = '+aa.toFixed(4)+' bbl/h × '+intH.toFixed(2)+' h\n'+
+      '  Leituras usadas (últimas '+aaRds.length+' com h > 0):\n'+
+      aaLines+'\n'+
+      '  → '+aaFormula+'\n'+
+      '  → Taxa méd. = '+aa.toFixed(4)+' bbl/h\n'+
+      '\n  Volume = '+aa.toFixed(4)+' bbl/h × '+intH.toFixed(2)+' h\n'+
       '  V = '+absInNext.toFixed(3)+' bbl\n'+
       '\nNão é necessário elevar o nível — apenas\nrepor o que a formação absorveu.';
     var box2=document.getElementById('rec-box-manter');
